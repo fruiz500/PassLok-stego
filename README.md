@@ -25,7 +25,7 @@ To decode a hidden message out of an image:
 3. Click the "Reveal" button. If the process is successful, the hidden text will appear in the big box.
 
 ### Error messages
-The process may sometimes fail due to image corruption or a bug in the jssteg libraries. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
+The process may sometimes fail due to image corruption or a bug in the js-steg libraries. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
 
 ### Credits
 Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
