@@ -29,4 +29,4 @@ The process may sometimes fail due to image corruption or a bug in the js-steg l
 
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
-* The PRNG used here is isaac, based on RC4, in its javascript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
+* The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
