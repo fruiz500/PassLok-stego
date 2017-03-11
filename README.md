@@ -28,4 +28,5 @@ To decode a hidden message out of an image:
 The process may sometimes fail due to image corruption or a bug in the js-steg libraries. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
 
 ### Credits
-Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
+* Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
+* The PRNG used here is isaac, based on RC4, in its javascript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
