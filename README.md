@@ -12,12 +12,14 @@ The algorithm presented here is slightly different from that used in PassLok Pri
 The program is designed to be self-explanatory, but here are some instructions just in case.
 
 To encode a hidden mesasge into an image:
+
 1. Write a text in the big box and, optionaly, a Password in the little box (can be more than one word).
 2. Load a cover image by clicking the "Load image" button. It can be any type of image recognized by browsers.
 3. Click either "PNG hide" to make a PNG image containing the text, or "JPG hide" to obtain a JPG image.
 4. If the encoding is successful, save the image locally by right-clicking on it.
 
 To decode a hidden message out of an image:
+
 1. Load the image by clicking the "Load image" button.
 2. If a Password was used for encoding, the same Password must be written in the small box. It does not matter whether or not there is anything in the big box.
 3. Click the "Reveal" button. If the process is successful, the hidden text will appear in the big box.
