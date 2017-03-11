@@ -2,6 +2,8 @@
 Just the part of PassLok that does image steganography
 You can find the rest of PassLok at https://github.com/fruiz500/passlok
 
+See this program running live at https://passlok.com/stego
+
 PassLok stego is based on the F5 algorithm by Andreas Westfeld (2001), which is described at https://www2.htw-dresden.de/~westfeld/publikationen/21370289.pdf, which is extended to PNG images as well. In addition, PassLok does some simple tricks to preserve the DCT AC coefficient histogram almost perfectly, making it even harder to detect than F5.
 
 A Password is optional, but if you don't enter one anybody who has the program will be able to detect and extract the data. If you do use a Password, on the othe hand, you have the power of the RC4 symmetric cipher, on which the optional encryption is ultimately based, protecting your data.
@@ -30,3 +32,4 @@ The process may sometimes fail due to image corruption or a bug in the js-steg l
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
 * The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
+* Thanks to Jean-Claude Rock for taking the time to show me how F5 works and what its flaws are.
