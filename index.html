@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" manifest="passlokstego.appcache">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>PassLok stego</title>
+<meta name="Keywords" content="steganography, F5, passlok, URSA, browser, encryption, decryption, symmetric, public key, signature, AES, ECDH, Diffie, Hellman, elliptic curve, advanced, javascript, PGP, PRISM">
+<meta name="Description" content="PassLok Image Steganography">
+<meta name="author" content="F. Ruiz">
+<meta name="robots" content="index">
+<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="passlok-touch-icon.png">
+<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+
+<!--Default CSS stylesheet containing the Light color scheme-->
+<style>
+html {
+	-webkit-text-size-adjust: 100%;
+}
+body {
+	font-family: Sans-Serif;
+	margin-left: 1%;
+	margin-right: 1%;
+	overflow: auto;
+	background-color: #FFFFFF;
+	color: #000000;
+}
+.cssbutton {
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	font-family: Arial;
+	font-size: 18px;
+	padding: 12px;
+	text-decoration: none;
+	border: 0px;
+	margin-right: -2px;
+	color: #666666;
+	background: #e6e6e6;
+}
+.cssbutton:hover {
+	text-decoration: none;
+	cursor: pointer;
+	background: #c4c4c4;
+}
+.cssbox {
+	-webkit-border-radius: 15px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+	font-size: medium;
+	padding: 15px;
+	text-decoration: none;
+	width: 100%;
+	-webkit-appearance: none;
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	color: #000000;
+	background: #fffff5;
+	border: 1px solid #dedede;
+	overflow: auto;
+}
+.blink {
+	-webkit-animation: blink .75s linear infinite;
+	-moz-animation: blink .75s linear infinite;
+	-ms-animation: blink .75s linear infinite;
+	-o-animation: blink .75s linear infinite;
+	animation: blink .75s linear infinite;
+}
+ @-webkit-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-moz-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-ms-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-o-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+</style>
+
+<!--License notice and SSL force-->
+<script>
+        /*
+		@source: https://passlok.com/stego/index.html
+
+        @licstart  The following is the entire license notice for the
+        JavaScript code in this page.
+
+        Copyright (C) 2017  Francisco Ruiz
+
+        The JavaScript code in this page is free software: you can
+        redistribute it and/or modify it under the terms of the GNU
+        General Public License (GNU GPL) as published by the Free Software
+        Foundation, either version 3 of the License, or (at your option)
+        any later version.  The code is distributed WITHOUT ANY WARRANTY;
+        without even the implied warranty of MERCHANTABILITY or FITNESS
+        FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+        As additional permission under GNU GPL version 3 section 7, you
+        may distribute non-source (e.g., minimized or compacted) forms of
+        that code without the copy of the GNU GPL normally required by
+        section 4, provided you include this license notice and a URL
+        through which recipients can access the Corresponding Source.
+
+
+        @licend  The above is the entire license notice
+        for the JavaScript code in this page.
+        */
+
+    if (window.location.protocol == "http:") {				//force SSL/TLS
+
+        var restOfUrl = window.location.href.substr(5);
+        window.location = "https:" + restOfUrl;
+    }
+</script>
+
+<!--jpeg image steganography by Owen Campbell-Moore and others. https://github.com/owencm/js-steg. First jsstegencoder-1.0.js-->
+<script src="lib/jsstegencoder.js"></script>
+
+<!--jsstegdecoder-1.0.js. Edits to display warning on error or skip over certain errors-->
+<script src="lib/jsstegdecoder.js"></script>
+
+<!--jssteg-1.0.js. Also some edits for error handling-->
+<script src="lib/jssteg.js"></script>
+
+<!--isaac seedable PRNG by Yves-Marie Rinquin. https://github.com/rubycon/isaac.js/blob/master/isaac.js-->
+<script src="lib/isaac.js"></script>
+
+<!--ORIGINAL CODE, largely based on F5 by A. Westfeld 2001-->
+<script>
+base64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+//makes the binary equivalent (array) of a base64 string. No error checking
+function toBin(input){
+	var output = new Array(input.length * 6),
+		code = '';
+	
+    for(var i = 0; i < input.length; i++) {
+		code = ("000000" + base64.indexOf(input.charAt(i)).toString(2)).slice(-6);
+		for(var j = 0; j < 6; j++){
+			output[6 * i + j] = parseInt(code.charAt(j))
+		}
+    }
+	return output
+}
+
+//retrieves base64 string from binary array. No error checking
+function fromBin(input){
+	var length = input.length - (input.length % 6)
+	var output = new Array(length / 6),
+		codeArray = new Array(6);
+	
+	for(var i = 0; i < length; i = i+6) {
+		codeArray = input.slice(i,i+6);
+		for(var j = 0; j < 6; j++){
+			codeArray[j] = input[i+j].toString()
+		}
+		output[i / 6] = base64.charAt(parseInt(codeArray.join(''),2))
+    }
+	return output.join('')
+}
+
+// load image for hiding text
+var importImage = function(e) {
+    var reader = new FileReader();
+    reader.onload = function(event) {
+        // set the preview
+        preview.style.display = 'block';
+        document.getElementById('preview').src = event.target.result;
+    }
+    reader.readAsDataURL(e.target.files[0]);
+	preview.onload = function(){updateCapacity()}
+};
+
+//show how much text can be hidden in the image
+function updateCapacity(){
+	//first measure PNG capacity
+	var pngBits = Math.floor(document.getElementById('preview').naturalHeight*document.getElementById('preview').naturalWidth*3),
+		textSize = btoa(mainBox.value.trim()).replace(/=+$/,'').length * 6;							//size in bits
+
+	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
+
+setTimeout(function(){
+	//now measure jpeg capacity
+	if(document.getElementById('preview').src.slice(11,15) == 'jpeg'){					//true jpeg capacity calculation, gets stuck on iOS
+		var lumaCoefficients = [],
+			count = 0;
+		jsSteg.getCoefficients(document.getElementById('preview').src, function(coefficients){
+			var subSampling = 1;
+			for(var index = 1; index <= 3; index++){						//first luma, then chroma channels, index 0 is always empty
+				lumaCoefficients = coefficients[index];
+				if(index != 1) subSampling = Math.floor(coefficients[1].length / lumaCoefficients.length);
+	 	 		for (var i = 0; i < lumaCoefficients.length; i++) {
+					for (var j = 0; j < 64; j++) {
+						if(lumaCoefficients[i][j] != 0) count += subSampling		//if subsampled, multiply the count since it won't be upon re-encoding
+   	 				}
+				}
+			}
+			var jpgBits = Math.floor(count - 52);			//4 bits used to encode k, 48 for the end marker
+			if(textSize <= pngBits){
+				imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits'
+			}else{
+				imageMsg.textContent = 'This image can hide ' + pngBits + ' bits. But the box contains ' + textSize + ' bits'
+			}
+		})
+	}else{															//no jpeg, so estimate capacity for a normal image
+		var jpgBits = Math.floor(pngBits / 20);
+		if(textSize <= pngBits){
+			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, at least ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits'
+		}else{
+			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG. But the box contains ' + textSize + ' bits'
+		}
+	}
+},30)					//end of timeout
+}
+
+//put text into image, which turns into PNG
+function encodePNG(){
+	var text = btoa(mainBox.value.trim()).replace(/=+$/,'');			//convert to base64
+
+	if(!text){
+		imageMsg.textContent = 'There is nothing to hide';
+		throw("box empty of content")
+	}
+	if(preview.src.length < 100){											//no image loaded
+		imageMsg.textContent = 'Please load an image before clicking this button';
+		throw("no image loaded")
+	}
+	
+	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
+
+	var resultURI = encodePNGprocess(text,document.getElementById('preview').src);					//this is the main process, in next functions
+
+	document.getElementById('preview').src = resultURI;													//put result into page so it can be saved
+	document.getElementById('preview').onload = function(){
+		imageMsg.textContent = 'Text hidden in the image. Right-click to save it.'
+	}
+}
+
+var imgEOF = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1];
+//this function does the PNG encoding as LSB in all channels except alpha, which is kept with original values
+function encodePNGprocess(text,sourceURI){
+	var shadowCanvas = document.createElement('canvas'),
+		shadowCtx = shadowCanvas.getContext('2d');
+	shadowCanvas.style.display = 'none';
+
+	var image = new Image();
+	image.src = sourceURI;
+	shadowCanvas.width = image.width;
+	shadowCanvas.height = image.height;
+	shadowCtx.drawImage(image, 0, 0);
+	
+	var imageData = shadowCtx.getImageData(0, 0, shadowCanvas.width, shadowCanvas.height),			//get the image data
+		indexBin = 0,
+		length = imageData.data.length,
+		alphaData = new Array(length / 4),
+		allLength = length / 4 * 3;
+	allCoefficients = new Array(allLength);				//global variable, initialized below
+	
+	//separate alpha channel
+	var j = 0;
+	for(var i = 0; i < length; i++){
+		if((i+1) % 4 == 0){
+			alphaData[Math.floor(i / 4)] = imageData.data[i]		//contains the alpha channel data
+		}else{
+			allCoefficients[j] = imageData.data[i];					//rest of the channels
+			j++
+		}
+	}
+	
+	//now turn the base64 text into a binary array
+	var msgBin = toBin(text).concat(imgEOF),							//also replace special characters with base64 and add 48-bit end marker
+		seed = imagePwd.value + allLength.toString() + 'png';				//seed for shuffling process
+	shuffleCoefficients(seed);										//scramble image data to unpredictable locations
+
+	msgBin = addNoise(msgBin);									//add noise so it looks statistically random. This function also subtracts the noise
+
+	encodeToCoefficients('png',msgBin);
+
+	unShuffleCoefficients();										//return image data to their right places
+
+	//put result into image, restoring alpha channel
+	j = 0;										//previously initialized
+	for(var i = 0; i < length; i++){
+		if((i+1) % 4){
+			imageData.data[i] = allCoefficients[j];					//RGB data
+			j++
+		}else{
+			imageData.data[i] = alphaData[Math.floor(i / 4)]			//alpha data restored from original		
+		}
+	}
+	permutation = [];				//reset global variables
+	allCoefficients = [];
+	imagePwd.value = '';
+
+	shadowCtx.putImageData(imageData, 0, 0);								//put in canvas so the dataURL can be produced
+	return shadowCanvas.toDataURL()
+}
+
+//extract text from image
+function decodeImage(){	
+	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
+	
+setTimeout(function(){
+	var loadedImage = document.getElementById('preview').src;
+	if(loadedImage.slice(11,15) == 'png;'){							//two cases: png and jpeg
+		decodePNG(loadedImage)
+	}else if(loadedImage.slice(11,15) == 'jpeg'){
+		decodeJPG()
+	}
+},10)						//long timeout because decoding may take a while
+}
+
+//decodes data stored in PNG image
+function decodePNG(sourceURI){
+	var shadowCanvas = document.createElement('canvas'),
+		shadowCtx = shadowCanvas.getContext('2d');
+	shadowCanvas.style.display = 'none';
+
+	var image = new Image();
+	image.src = sourceURI;
+	shadowCanvas.width = image.width;
+	shadowCanvas.height = image.height;
+	shadowCtx.drawImage(image, 0, 0);
+
+	var imageData = shadowCtx.getImageData(0, 0, image.width, image.height),
+		length = imageData.data.length,
+		allLength = length / 4 * 3;
+	allCoefficients = new Array(allLength);				//global variable
+	
+	//separate RGB data from alpha channel
+	var j = 0;
+	for(var i = 0; i < length; i++){
+		if((i+1) % 4 != 0){
+			allCoefficients[j] = imageData.data[i];				//only RGB data
+			j++
+		}
+	}
+
+	var seed = imagePwd.value + allLength.toString() + 'png';						//seed for shuffling process
+	shuffleCoefficients(seed);																	//scramble image data to unpredictable locations
+
+	var msgBin = decodeFromCoefficients('png');
+
+	try{
+		mainBox.value = atob(fromBin(msgBin));						//decode back to characters
+		imageMsg.textContent = 'Reveal successful'
+	}catch(err){
+		imageMsg.textContent = 'The message is corrupt'
+	}
+	permutation = [];
+	allCoefficients = [];
+	imagePwd.value = ''
+}
+
+//this function gets the jpeg coefficients (first luma, then chroma) and extracts the hidden material. Stops when the 48-bit endText code is found
+var allCoefficients, permutation;
+var decodeJPG = function(){
+	jsSteg.getCoefficients(document.getElementById('preview').src, function(coefficients){
+		var length = coefficients[1].length;
+		if(coefficients[2].length != length){							//there's chrome subsampling, therefore it was not made by this process
+			imageMsg.textContent = 'This image does not contain anything, or perhaps the password is wrong';		//actually, just the former
+			throw('image is chroma subsampled')
+		}
+
+		var	rawLength = 3*length*64,
+			rawCoefficients = new Array(rawLength);
+
+		for(var index = 1; index <= 3; index++){									//linearize the coefficients matrix into rawCoefficients
+			for (var i = 0; i < length; i++) {
+				for (var j = 0; j < 64; j++) {
+					rawCoefficients[index*length*64 + i*64 + j] = coefficients[index][i][j]
+				}
+			}
+		}	
+		allCoefficients = rawCoefficients.filter(Boolean);						//get rid of zeros
+
+		var seed = imagePwd.value + allCoefficients.length.toString() + 'jpeg';		//seed for shuffling process
+		shuffleCoefficients(seed);															//scramble image data to unpredictable locations
+
+		var msgBin = decodeFromCoefficients('jpeg');
+
+		try{
+			mainBox.value = atob(fromBin(msgBin));						//decode back to characters
+			imageMsg.textContent = 'Reveal successful'
+		}catch(err){
+			imageMsg.textContent = 'The message is corrupt'
+		}
+		permutation = [];
+		allCoefficients = [];
+		imagePwd.value = ''
+	})
+}
+
+//function to encode mainBox as coefficients in a jpeg image. Most of the work is done by modifyCoefficients, below
+var encodeJPG = function(){
+	var text = btoa(mainBox.value.trim()).replace(/=+$/,'');			//convert to base64
+
+	if(!text){
+		imageMsg.textContent = 'There is nothing to hide';
+		throw("box empty of content")
+	}
+	if(preview.src.length < 100){											//no image loaded
+		imageMsg.textContent = 'Please load an image before clicking this button';
+		throw("no image loaded")
+	}
+	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
+	
+setTimeout(function(){																			//the rest after a 30 ms delay
+	jsSteg.reEncodeWithModifications(document.getElementById('preview').src, modifyCoefficients, function (resultURI) {
+		document.getElementById('preview').src = resultURI;
+		document.getElementById('preview').onload = function(){
+			imageMsg.textContent = 'Text hidden in the image. Right-click to save it.'
+		}
+  	})
+},30)						//end of timeout
+}
+
+/**
+ * Called when encoding a JPEG
+ * - coefficients: coefficients[0] is an array of luminosity blocks, coefficients[1] and
+ *   coefficients[2] are arrays of chrominance blocks. Each block has 64 "modes"
+ */
+var modifyCoefficients = function(coefficients) {
+	var text = btoa(mainBox.value.trim()).replace(/=+$/,'');			//convert to base64
+
+	var msgBin = toBin(text).concat(imgEOF);			//convert to binary and add 48-bit end marker
+		
+	var length = coefficients[0].length,
+		rawLength = 3*length*64,
+		rawCoefficients = new Array(rawLength);
+
+	for(var index = 0; index < 3; index++){									//linearize the coefficients matrix into rawCoefficients
+		for (var i = 0; i < length; i++) {
+			for (var j = 0; j < 64; j++) {
+				rawCoefficients[index*length*64 + i*64 + j] = coefficients[index][i][j]
+			}
+		}
+	}
+	allCoefficients = rawCoefficients.filter(Boolean);						//remove zeros and store in global variable
+
+	var seed = imagePwd.value + allCoefficients.length.toString() + 'jpeg';		//seed for shuffling process
+	shuffleCoefficients(seed);										//scramble image data to unpredictable locations
+	
+	msgBin = addNoise(msgBin);
+	
+	encodeToCoefficients('jpeg', msgBin);						//encoding step
+
+	unShuffleCoefficients();							//get the coefficients back to their original places
+	
+	var j = 0;													//put the zeros back in their places
+	for(var i = 0; i < rawLength; i++){
+		if(rawCoefficients[i]){									//only non-zeros
+			rawCoefficients[i] = allCoefficients[j];
+			j++
+		}
+	}
+
+	for(var index = 0; index < 3; index++){					//reshape coefficient array back to original form
+		for (var i = 0; i < length; i++) {
+			for (var j = 0; j < 64; j++) {
+				coefficients[index][i][j] = rawCoefficients[index*length*64 + i*64 + j]
+			}
+		}
+	}
+	permutation = [];
+	allCoefficients = [];
+	imagePwd.value = ''
+}
+
+//calculates a random-walk permutation, as seeded by "seed" and shuffles the global array "allCoefficients" accordingly. "permutation" is also global
+function shuffleCoefficients(seed){
+	isaac.seed(seed);		//re-seed the PRNG
+	
+	var	length = allCoefficients.length,
+		permutedCoeffs = new Array(length);
+
+	permutation = randPerm(length);		//pseudo-random but repeatable array containing values 0 to length-1
+
+	for(var i = 0; i < length; i++){
+		permutedCoeffs[i] = allCoefficients[permutation[i]]
+	}
+	for(var i = 0; i < length; i++){
+		allCoefficients[i] = permutedCoeffs[i]
+	}
+}
+
+//inverse of the previous function, assumes the data and permutation arrays are stored in global variables allCoefficients and permutation
+function unShuffleCoefficients(){
+	var	length = allCoefficients.length,
+		permutedCoeffs = new Array(length),
+		inversePermutation = new Array(length),
+		index;
+
+	for(var i = 0; i < length; i++){		//first make the inverse permutation array
+		index = permutation[i];
+		inversePermutation[index] = i
+	}
+	
+	for(var i = 0; i < length; i++){
+		permutedCoeffs[i] = allCoefficients[inversePermutation[i]]
+	}
+	for(var i = 0; i < length; i++){
+		allCoefficients[i] = permutedCoeffs[i]
+	}	
+}
+
+//obtain a random permutation using isaac re-seedable PRNG, for use in image steganography
+function randPerm(n) {
+  var result = new Array(n);
+  result[0] = 0;
+
+  for(var i = 1; i < n; ++i) {
+    var idx = (isaac.random() * (i + 1)) | 0;			//here is the call to the isaac PRNG library
+    if(idx < i) {
+      result[i] = result[idx]
+    }
+    result[idx] = i
+  }
+  return result
+}
+
+//XORs binary data with pseudorandom noise so it is statistically random. Used to add noise and also to subtract it. Input is a binary array
+function addNoise(array){
+	var length = array.length;
+	for(var i = 0; i < length; i++){
+		array[i] = (array[i] == ((isaac.random() * 2) | 0)) ? 0: 1;			//here is the call to the isaac PRNG library
+	}
+	return array
+}
+
+//convert binary array to decimal number
+function binArray2dec(array){
+	var length = array.length,
+		output = 0,
+		mult = 1;
+	
+	for(var i = 0; i < length; i++){
+		output += array[length-1-i]*mult;
+		mult = mult*2
+	}
+	return output
+}
+
+//to get the parity of a number. Positive: 0 if even, 1 if odd. Negative: 0 if odd, 1 if even. 0 is even
+function stegParity(number){
+	if(number >= 0){
+		return number % 2
+	}else{
+		return -(number - 1) % 2
+	}
+}
+
+//matrix encoding of allCoefficients with variable k, which is prepended to the message. Selectable for png or jpeg encoding.
+function encodeToCoefficients(type,inputBin){
+	//first decide what value to use for k
+	var length = allCoefficients.length - 4,
+		rate = inputBin.length / length,				//necessary embedding rate
+		k = 1;
+	if(inputBin.length > length){
+		imageMsg.textContent = 'This image can hide ' + length.toString() + ' bits. But the box contains ' + inputBin.length.toString() + ' bits';
+		allCoefficients = [];
+		permutation = [];
+		imagePwd.value = '';
+		throw('not enough hiding capacity')
+	}
+	while (k / (Math.pow(2,k) - 1) > rate) k++;				//k expected to be less than 16 so it can fit into 4 bits
+	k--;
+	if(k > 16) k = 16;											//so it fits in 4 bits at the start
+	var kCode = new Array(4);									//k in 4-bit binary form
+	for(var j = 0; j < 4; j++) kCode[3-j] = (k-1 >> j) & 1;	//actually, encode k-1 (0 to 15)
+	if(type == 'jpeg'){
+		var count1to3 = partialHistogram(allCoefficients.slice(4)),		//calculate histogram-adjusting frequencies
+			y = count1to3[2]/(count1to3[1] + count1to3[2]),
+			ones = 0,													//surplus 1's and -1's
+			minusones = 0;
+	}
+
+	//now encode k into allCoefficients
+	if(type == 'jpeg'){												//jpeg embedding
+		for(var i = 0; i < 4; i++){
+			if(allCoefficients[i] > 0){									//positive same as for png
+				if(kCode[i] == 1 && stegParity(allCoefficients[i]) == 0){			//even made odd by going down one
+					allCoefficients[i]--
+				}else if(kCode[i] == 0 && stegParity(allCoefficients[i]) != 0){		//odd made even by going down one, except if the value was 1, which is taken to -1
+					if(allCoefficients[i] != 1){ allCoefficients[i]-- }else{ allCoefficients[i] = -1}
+				}
+			}else{														//negative coefficients are encoded in reverse
+				if(kCode[i] == 0 && stegParity(allCoefficients[i]) != 0){		//"odd" made even by going up one
+					allCoefficients[i]++
+				}else if(kCode[i] == 1 && stegParity(allCoefficients[i]) == 0){			//"even" made odd by going up one, except if the value was -1, which is taken to 1
+					if(allCoefficients[i] != -1){ allCoefficients[i]++ }else{ allCoefficients[i] = 1}
+				}
+			}
+		}
+	}else{																//png embedding
+		for(var i = 0; i < 4; i++){
+			if(kCode[i] == 1 && stegParity(allCoefficients[i]) == 0){					//even made odd by going up one
+				allCoefficients[i]++
+			}else if(kCode[i] == 0 && stegParity(allCoefficients[i]) != 0){				//odd made even by going down one
+				allCoefficients[i]--
+			}
+		}
+	}	
+	
+	//encode the actual data
+	var n = Math.pow(2,k) - 1,
+		blocks = Math.ceil(inputBin.length / k);		//number of blocks that will be used
+	
+	var parityBlock = new Array(n),
+		inputBlock = new Array(k),
+		coverBlock = new Array(n),
+		hash, inputNumber, outputNumber;						//decimal numbers
+	while(inputBin.length % k) inputBin.push(0);				//pad msg with zeros so its length is a multiple of k
+
+	for(var i = 0; i < blocks; i++){
+		inputBlock = inputBin.slice(i*k, (i*k)+k);
+		inputNumber = binArray2dec(inputBlock);						//convert the binary block to decimal
+		coverBlock = allCoefficients.slice(4+i*n, 4+(i*n)+n);		//first 4 were for encoding k
+		for(var j = 0; j < n; j++) parityBlock[j] = stegParity(coverBlock[j]);		//get parity digit for each number
+		
+		hash = 0;
+		for(var j = 1; j <= n; j++) hash = hash ^ (parityBlock[j-1]*j);		//hash-making step, as in F5, notice the xor operation
+		outputNumber = inputNumber ^ hash;							//position in the cover block that needs to be flipped, if the position is 0 change none
+		
+		if(outputNumber){												//no change if the result is zero, but increment the counter anyway
+			if(type == 'jpeg'){										//jpeg embedding
+				if(coverBlock[outputNumber-1] > 0){			//positive, so change by going down (normally); if 1 or -1, switch to the other
+					if(coverBlock[outputNumber-1] == 1){		//whether to go up or down determined by whether there are too few or too many 1's and -1's
+						if(minusones <= 0){allCoefficients[3+i*n+outputNumber] = -1; ones--; minusones++}else{allCoefficients[3+i*n+outputNumber] = 2; ones--}
+					}else if(coverBlock[outputNumber-1] == 2){
+						if(ones <= 0){allCoefficients[3+i*n+outputNumber]--; ones++}else{allCoefficients[3+i*n+outputNumber]++}
+					}else{
+						if(Math.random() > y){allCoefficients[3+i*n+outputNumber]--}else{allCoefficients[3+i*n+outputNumber]++}
+					}
+				}else if(coverBlock[outputNumber-1] < 0){	//negative, so change by going up
+					if(coverBlock[outputNumber-1] == -1){
+						if(ones <= 0){allCoefficients[3+i*n+outputNumber] = 1; minusones--; ones++}else{allCoefficients[3+i*n+outputNumber] = -2; minusones--}
+					}else if(coverBlock[outputNumber-1] == -2){
+						if(minusones <= 0){allCoefficients[3+i*n+outputNumber]++; minusones++}else{allCoefficients[3+i*n+outputNumber]--}
+					}else{
+						if(Math.random() > y){allCoefficients[3+i*n+outputNumber]++}else{allCoefficients[3+i*n+outputNumber]--}
+					}
+				}													//if the coefficient was a zero, there is no change and the counter does not advance, so we repeat			
+			}else{														//png embedding
+				if(coverBlock[outputNumber-1] % 2){					//odd made even by going down one
+					allCoefficients[3+i*n+outputNumber]--
+				}else{													//even made odd by going up one
+					allCoefficients[3+i*n+outputNumber]++
+				}
+			}
+		}
+	}	
+}
+
+//matrix decode of allCoefficients, where k is extracted from the start of the message. Selectable for png or jpeg encoding.
+function decodeFromCoefficients(type){
+	//first extract k
+	var kCode = new Array(4);										//contains k in 4-bit format
+	for(var i = 0; i < 4; i++) kCode[i] = stegParity(allCoefficients[i]);			//output is 1's and 0's
+	var k = binArray2dec(kCode) + 1;
+	
+	//now decode the data
+	var n = Math.pow(2,k) - 1,
+		length = allCoefficients.length - 4,
+		blocks = Math.floor(length / n);
+	if(blocks == 0){										//cover does not contain even one block
+		imageMsg.textContent = 'This image does not contain anything, or perhaps the password is wrong';
+		allCoefficients = [];
+		permutation = [];
+		imagePwd.value = '';
+		throw('block size larger than available data')
+	}
+	
+	var parityBlock = new Array(n),
+		coverBlock = new Array(n),
+		outputBin = new Array(k*blocks),
+		hash;
+
+	for(var i = 0; i < blocks; i++){
+		coverBlock = allCoefficients.slice(4+i*n, 4+(i*n)+n);
+		for(var j = 0; j < n; j++) parityBlock[j] = stegParity(coverBlock[j]);		//0 if even, 1 if odd (reverse if negative, as in F5)
+		
+		hash = 0;
+		for(var j = 1; j <= n; j++) hash = hash ^ (parityBlock[j-1]*j);		//hash-making step, as in F5, notice the xor operation
+		for(var j = 0; j < k; j++) outputBin[i*k + k-1-j] = (hash >> j) & 1		//converts number to binary array and adds to output
+	}
+	
+	outputBin = addNoise(outputBin);					//subtract the noise added when encoding
+
+	var found = false,									//find the end marker after all the embedded bits are extracted, rather than after every block. This ends up being faster
+		outLength = outputBin.length;
+	for(var j = 0; j < outLength - 47; j++){
+		found = true
+		for(var l = 0; l < 48; l++){
+			found = found && (imgEOF[47-l] == outputBin[outLength-l-j])
+		}
+		if(found){var fromEnd = j+47; break}
+	}		
+	if(!found){
+		imageMsg.textContent = 'The image does not contain anything, or perhaps the password is wrong';
+		allCoefficients = [];
+		permutation = [];
+		imagePwd.value = '';
+		throw('end marker not found')
+	}
+	return outputBin.slice(0,-fromEnd);								//clean up the end
+}
+
+//gets counts in the DCT AC histogram: 1's plus -1, 2's plus -2, 3's plus -3, outputs array containing the counts
+function partialHistogram(array){
+	var output = [0,0,0],
+		length = array.length;
+	
+	for(var j = 0; j < length; j++){
+		for(var i = 1; i <= 3; i++){
+			if(array[j] == i || array[j] == -i) output[i-1]++
+		}
+	}
+	return output
+}
+
+//gets the histogram of an array, in this format: 0, 1, -1, 2, -2, ..., n, -n. Inputs are the array and n, output is the histogram. For testing purposes.
+function getHistogram(array, n){
+	var output = new Array(2*n + 2),
+		length = array.length,
+		counter1 = 0,
+		counter2 = 0;
+	
+	for(var i = 0; i <= n; i++){
+		counter1 = counter2 = 0;
+		for(var j = 0; j < length; j++){
+			if(array[j] == i) counter1++;
+			if(array[j] == -i) counter2++
+		}
+		output[2*i] = counter1;
+		output[2*i+1] = counter2
+	}
+	return output.slice(1)
+}
+</script>
+
+</head>
+
+<body>
+
+<!--User interface, consisting of two panels side by side-->
+<div id="leftPanel" style="width: 45%; height: 100%; float: left;">
+<h3>PassLok image steganography</h3><p>&copy; F. Ruiz 2017</p>
+  <button class="cssbutton" id="encodePNGBtn" value="PNG Hide" title="hide box contents into PNG image">PNG hide</button>
+  &nbsp;
+  <button class="cssbutton" id="encodeJPGBtn" value="JPG Hide" title="hide box contents into JPG image">JPG hide</button>
+  &nbsp;
+  <button class="cssbutton" id="decodeImgBtn" value="Reveal" title="extract hidden content and put it in the box">Reveal</button>
+  &nbsp;
+  <button class="cssbutton" id="clearBtn" value="Clear" title="clear box">Clear</button>
+  <br />
+  <br />
+  <label for="imageFile" title="open dialog to select the cover image"><span class="cssbutton">Load image</span></label>
+  <input type='file' id='imageFile' style="display:none;"/>
+&nbsp; &nbsp;<input type="text" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:40%;padding:5px;" placeholder="optional Password"/>
+  <br />
+  <br />
+  <textarea class="cssbox" id="mainBox" title="Type what you want to hide here" placeholder="1 Type what you want to hide here. 2 Load an image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password."></textarea>
+</div>
+<div id="rightPanel" style="width: 50%; height: 100%; float: right;">
+  <br />
+  <br />
+  <div id="imageMsg" style="height:30px;"></div>
+  <br />
+  <br />
+  <img id="preview" src="" width="100%"/>
+</div>
+
+<!--Body script: window reformatting, button listeners-->
+<script>
+window.onload = function() {
+
+//resizes main box so it fits within the window
+	function textHeight(){
+		var	fullHeight = document.documentElement.clientHeight,
+			offsetHeight = 250;
+		mainBox.style.height = fullHeight - offsetHeight + 'px'
+	}
+	
+	textHeight();
+	
+//event listeners for buttons etc.
+	window.addEventListener('resize',textHeight);
+
+	imageFile.addEventListener('change', importImage);
+	imageFile.addEventListener('click', function(){this.value = '';});
+
+	encodePNGBtn.addEventListener('click', encodePNG);
+
+	encodeJPGBtn.addEventListener('click', encodeJPG);
+
+    decodeImgBtn.addEventListener('click', decodeImage);
+	
+	clearBtn.addEventListener('click', function(){mainBox.value = '';});
+}
+</script>
+
+</body>
+</html>
