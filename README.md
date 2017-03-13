@@ -1,21 +1,38 @@
 # PassLok-stego
 Just the part of PassLok that does image steganography
 You can find the rest of PassLok at https://github.com/fruiz500/passlok
-
-See this program running live at https://passlok.com/stego
+Live demo at https://passlok.com/stego
 
 PassLok stego is based on the F5 algorithm by Andreas Westfeld (2001), which is described at https://www2.htw-dresden.de/~westfeld/publikationen/21370289.pdf, which is extended to PNG images as well. In addition, PassLok does some simple tricks to preserve the DCT AC coefficient histogram almost perfectly, making it even harder to detect than F5.
 
 A Password is optional, but if you don't enter one anybody who has the program will be able to detect and extract the data. If you do use a Password, on the othe hand, you have the power of the RC4 symmetric cipher, on which the optional encryption is ultimately based, protecting your data.
 
-The algorithm presented here is slightly different from that used in PassLok Privacy and PassLok for Email, in that those take only a base64 input which, presumably, is the result of encryption and therefore has good statistical randomness, whereas the algorithm here adds some extra randomness and accepts generic text input. Consequently, images containing a payload encoded in PassLok Privacy or PassLok for Email _won't be successfully decoded_ by this program, nor vice-versa.
+The algorithm presented here is slightly different from that used in PassLok Privacy and PassLok for Email, in that those take only a base64 input which, presumably, is the result of encryption and therefore has good statistical randomness, whereas the algorithm here adds some extra randomness and accepts generic binary input. Consequently, images containing a payload encoded in PassLok Privacy or PassLok for Email _won't be successfully decoded_ by this program, nor vice-versa.
 
 ### Usage
-The program is designed to be self-explanatory, but here are some instructions just in case.
+The necessary functions are loaded when all the libraries in the /lib folder are loaded (only plstego.js, if you are going to encode and decode only in PNG format). No initialization is necessary, but an element containing an image (it does not matter what type, so long as the browser can display it) must be already loaded on the DOM before the functions below are called.
+
+To encode a binary item into an image loaded in the DOM, use either of the following statements:
+
+	encodePNG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)))
+	encodeJPG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)))
+	
+The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}
+	
+To decode a hidden item out of an image, use either of these statements, depending on the type of image loaded:
+	
+	decodePNG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
+	decodeJPG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
+	
+Here the callback function should have two arguments: the first is the item extracted from the image as an array containing only 1's and 0's, the second a string message indicating whether or not the operation has been successful. There is also a function that determines automatically the type of image file (PNG or JPG) and calls the appropriate decoding function:
+	
+	decodeImage(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
+	
+The sample program index.html, which hides UTF8 text placed in a textarea element, is designed to be self-explanatory, but here are some instructions just in case.
 
 To encode a hidden message into an image:
 
-1. Write a text in the big box and, optionaly, a Password in the little box (can be more than one word).
+1. Write the text in the big box and, optionaly, a Password in the little box (can be more than one word).
 2. Load a cover image by clicking the "Load image" button. It can be any type of image recognized by browsers.
 3. Click either "PNG hide" to make a PNG image containing the text, or "JPG hide" to obtain a JPG image.
 4. If the encoding is successful, save the image locally by right-clicking on it.
@@ -32,4 +49,3 @@ The process may sometimes fail due to image corruption or a bug in the js-steg l
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
 * The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
-* Thanks to Jean-Claude Rock for taking the time to show me how F5 works and what its flaws are.
