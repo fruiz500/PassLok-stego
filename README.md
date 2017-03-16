@@ -14,25 +14,27 @@ The necessary functions are loaded when all the libraries in the /lib folder are
 
 To encode a binary item into an image loaded in the DOM, use either of the following statements:
 
-	encodePNG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)))
-	encodeJPG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)))
+	encodePNG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), randomToggle)
+	encodeJPG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), randomToggle)
 	
-The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}
+	The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}. The randomToggle is an optional Boolean variable (default: false) that instructs the program to skip the step where noise is added or subtracted, in case the embedded data already has sufficient randomness.
 	
-To decode a hidden item out of an image, use either of these statements, depending on the type of image loaded:
+	To decode a hidden item out of an image, use either of these statements, depending on the type of image loaded:
 	
-	decodePNG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
-	decodeJPG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
+	decodePNG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
+	decodeJPG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
 	
-Here the callback function should have two arguments: the first is the item extracted from the image as an array containing only 1's and 0's, the second a string message indicating whether or not the operation has been successful. There is also a function that determines automatically the type of image file (PNG or JPG) and calls the appropriate decoding function:
+	Here the callback function should have two arguments: the first is the item extracted from the image as an array containing only 1's and 0's, the second a string message indicating whether or not the operation has been successful. There is also a function that determines automatically the type of image file (PNG or JPG) and calls the appropriate decoding function:
 	
-	decodeImage(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)))
+	decodeImage(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
+	
+	iOS users beware: as of version 10.2 of iOS, the jsstegdecoder library crashes at line 541. This means that you will be able to do encode/decode for PNG, and encode for JPG, but not decode for JGP.
 	
 The sample program index.html, which hides UTF8 text placed in a textarea element, is designed to be self-explanatory, but here are some instructions just in case.
 
 To encode a hidden message into an image:
 
-1. Write the text in the big box and, optionaly, a Password in the little box (can be more than one word).
+1. Write the text in the big box and, optionaly, a Password in the little box (can be more than one word). If you want to compress the text before encoding, check the Compr. box.
 2. Load a cover image by clicking the "Load image" button. It can be any type of image recognized by browsers.
 3. Click either "PNG hide" to make a PNG image containing the text, or "JPG hide" to obtain a JPG image.
 4. If the encoding is successful, save the image locally by right-clicking on it.
@@ -40,12 +42,13 @@ To encode a hidden message into an image:
 To decode a hidden message out of an image:
 
 1. Load the image by clicking the "Load image" button.
-2. If a Password was used for encoding, the same Password must be written in the small box. It does not matter whether or not there is anything in the big box.
+2. If a Password was used for encoding, the same Password must be written in the small box. The Compr. checkbox must also set the same way as for encoding. It does not matter whether or not there is anything in the big box.
 3. Click the "Reveal" button. If the process is successful, the hidden text will appear in the big box.
 
 ### Error messages
-The process may sometimes fail due to image corruption or a bug in the js-steg libraries. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
+The process may sometimes fail due to image corruption or a bug in the js-steg libraries. For instance, JPG decoding fails on iOS because of a crash of jsstegdecoder.js at line 541. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
 
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
 * The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
+* Compression used in the demo program is lz-string.js by Pieroxy. Source: https://github.com/pieroxy/lz-string

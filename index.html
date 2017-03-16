@@ -191,6 +191,9 @@ opacity: 0;
 <!--isaac seedable PRNG by Yves-Marie Rinquin. https://github.com/rubycon/isaac.js/blob/master/isaac.js-->
 <script src="lib/isaac.js"></script>
 
+<!--lz-string compression algorithm by Pieroxy. https://github.com/pieroxy/lz-string-->
+<script src="lib-extra/lz-string.js"></script>
+
 <!--ORIGINAL PassLok-stego CODE, largely based on F5 by A. Westfeld 2001-->
 <script src="lib/plstego.js"></script>
 
@@ -241,19 +244,13 @@ setTimeout(function(){
 				}
 			}
 			var jpgBits = Math.floor(count - 52);					//4 bits used to encode k, 48 for the end marker
-			if(textSize <= pngBits){
-				imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits'
-			}else{
-				imageMsg.textContent = 'This image can hide ' + pngBits + ' bits. But the box contains ' + textSize + ' bits'
-			}
+
+			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits before compression'
 		})
 	}else{															//no jpeg, so estimate capacity for a normal image
 		var jpgBits = Math.floor(pngBits / 20);
-		if(textSize <= pngBits){
-			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, at least ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits'
-		}else{
-			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG. But the box contains ' + textSize + ' bits'
-		}
+
+		imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, at least ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits before compression'
 	}
 },30)					//end of timeout
 }
@@ -317,20 +314,28 @@ function encode(){
 	}
 	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
 	
+	if(compressedMode.checked){
+		var array2embed = toBin(LZString.compressToBase64(text).replace(/=+$/,''))
+	}else{
+		var array2embed = toBin(b64EncodeUnicode(text).replace(/=+$/,''))
+	}
+	
 	if(this.id == 'encodePNGBtn'){
 		setTimeout(function(){
-			encodePNG(preview,toBin(b64EncodeUnicode(text).replace(/=+$/,'')),imagePwd.value,function(msg){		//text is made base64 first, then a binary array
+			encodePNG(preview,array2embed,imagePwd.value,function(msg){		//text is made base64 first, then a binary array
 				imagePwd.value = '';
 				imageMsg.textContent = msg
-			});
+			},
+			compressedMode.checked);												//no extra noise added if compressed
 			imagePwd.value = ''
 		},10)
 	}else{
 		setTimeout(function(){
-			encodeJPG(preview,toBin(b64EncodeUnicode(text).replace(/=+$/,'')),imagePwd.value,function(msg){
+			encodeJPG(preview,array2embed,imagePwd.value,function(msg){
 				imagePwd.value = '';
 				imageMsg.textContent = msg
-			});
+			},
+			compressedMode.checked);
 			imagePwd.value = ''
 		},10)
 	}
@@ -346,10 +351,15 @@ function decode(){
 	
 setTimeout(function(){
 	decodeImage(preview,imagePwd.value,function(textBin,msg){
-		mainBox.value = b64DecodeUnicode(fromBin(textBin));											//binary output turned to base64 first, then into UTF8 text
+		if(compressedMode.checked){
+			mainBox.value = LZString.decompressFromBase64(fromBin(textBin))
+		}else{
+			mainBox.value = b64DecodeUnicode(fromBin(textBin))											//binary output turned to base64 first, then into UTF8 text
+		}
 		imagePwd.value = '';
 		imageMsg.textContent = msg
-		})
+		},
+		compressedMode.checked)																			//no extra noise to remove if compressed
 },10)
 }
 
@@ -391,10 +401,11 @@ function getHistogram(array, n){
   <br />
   <label for="imageFile" title="open dialog to select the cover image"><span class="cssbutton">Load image</span></label>
   <input type='file' id='imageFile' style="display:none;"/>
-&nbsp; &nbsp;<input type="text" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:40%;padding:5px;" placeholder="optional Password"/>
+&nbsp; &nbsp;<input type="text" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:35%;padding:5px;" placeholder="optional Password"/>
+  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing">&nbsp;Compr.
   <br />
   <br />
-  <textarea class="cssbox" id="mainBox" title="type what you want to hide here" placeholder="1 Type what you want to hide here. 2 Load an image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password."></textarea>
+  <textarea class="cssbox" id="mainBox" title="type what you want to hide here" placeholder="1 Type what you want to hide here. 2 Load an image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password and compression."></textarea>
 </div>
 <div id="rightPanel" style="width: 50%; height: 100%; float: right;">
   <br />
