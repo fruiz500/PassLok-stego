@@ -17,18 +17,18 @@ To encode a binary item into an image loaded in the DOM, use either of the follo
 	encodePNG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), randomToggle)
 	encodeJPG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), randomToggle)
 	
-	The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}. The randomToggle is an optional Boolean variable (default: false) that instructs the program to skip the step where noise is added or subtracted, in case the embedded data already has sufficient randomness.
+The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}. The randomToggle is an optional Boolean variable (default: false) that instructs the program to skip the step where noise is added or subtracted, in case the embedded data already has sufficient randomness.
 	
-	To decode a hidden item out of an image, use either of these statements, depending on the type of image loaded:
+To decode a hidden item out of an image, use either of these statements, depending on the type of image loaded:
 	
 	decodePNG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
 	decodeJPG(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
 	
-	Here the callback function should have two arguments: the first is the item extracted from the image as an array containing only 1's and 0's, the second a string message indicating whether or not the operation has been successful. There is also a function that determines automatically the type of image file (PNG or JPG) and calls the appropriate decoding function:
+Here the callback function should have two arguments: the first is the item extracted from the image as an array containing only 1's and 0's, the second a string message indicating whether or not the operation has been successful. There is also a function that determines automatically the type of image file (PNG or JPG) and calls the appropriate decoding function:
 	
 	decodeImage(image element (object), password (string), callback function(item extracted (binary array), message to be displayed (string)), randomToggle)
 	
-	iOS users beware: as of version 10.2 of iOS, the jsstegdecoder library crashes at line 541. This means that you will be able to do encode/decode for PNG, and encode for JPG, but not decode for JGP.
+iOS users beware: as of version 10.2 of iOS, the jsstegdecoder library crashes at line 541. This means that you will be able to do encode/decode for PNG, and encode for JPG, but not decode for JGP.
 	
 The sample program index.html, which hides UTF8 text placed in a textarea element, is designed to be self-explanatory, but here are some instructions just in case.
 
