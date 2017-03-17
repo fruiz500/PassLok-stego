@@ -1,6 +1,7 @@
 # PassLok-stego
 Just the part of PassLok that does image steganography
 You can find the rest of PassLok at https://github.com/fruiz500/passlok
+
 Live demo at https://passlok.com/stego
 
 PassLok stego is based on the F5 algorithm by Andreas Westfeld (2001), which is described at https://www2.htw-dresden.de/~westfeld/publikationen/21370289.pdf, which is extended to PNG images as well. In addition, PassLok does some simple tricks to preserve the DCT AC coefficient histogram almost perfectly, making it even harder to detect than F5.
