@@ -34,7 +34,7 @@ The sample program index.html, which hides UTF8 text placed in a textarea elemen
 
 To encode a hidden message into an image:
 
-1. Write the text in the big box and, optionaly, a Password in the little box (can be more than one word). If you want to compress the text before encoding, check the Compr. box.
+1. Write the text in the big box (you can also insert images and files) and, optionaly, a Password in the little box (can be more than one word). If you want to compress the text before encoding, keep the Compr. box checked.
 2. Load a cover image by clicking the "Load image" button. It can be any type of image recognized by browsers.
 3. Click either "PNG hide" to make a PNG image containing the text, or "JPG hide" to obtain a JPG image.
 4. If the encoding is successful, save the image locally by right-clicking on it.
@@ -52,3 +52,4 @@ The process may sometimes fail due to image corruption or a bug in the js-steg l
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
 * The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
 * Compression used in the demo program is lz-string.js by Pieroxy. Source: https://github.com/pieroxy/lz-string
+* Special thanks to Jean-Claude Rock for explaining to me how F5 works and what its flaws are

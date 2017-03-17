@@ -141,6 +141,30 @@ opacity: 0;
 opacity: 0;
 }
 }
+#toolBar1 {
+	padding-top: 1px;
+	padding-left: 2px;
+	border-top-left-radius: 15px;
+	border-top-right-radius: 15px;
+	background: #e6e6e6;
+}
+#toolBar1 select {
+	font-size: 10px;
+	width: 80px;
+	padding: 4px;
+	border-radius: 8px;
+}
+#mainBox {
+	width: 100%;
+	padding: 12px;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+[contenteditable=true]:empty:before{
+  content: attr(placeholder);
+  display: block; /* For Firefox */
+  color: #999999;
+}
 </style>
 
 <!--License notice and SSL force-->
@@ -199,6 +223,48 @@ opacity: 0;
 
 <!--code specific to this HTML document-->
 <script>
+function loadFileAsURL(){
+	var fileToLoad = mainFile.files[0],
+		fileReader = new FileReader();
+	fileReader.onload = function(fileLoadedEvent){
+		var fileName = fileToLoad.name,
+			URLFromFileLoaded = fileLoadedEvent.target.result;
+
+		if(fileToLoad.type.slice(0,4) == "text"){
+			if(URLFromFileLoaded.slice(0,2) == '==' && URLFromFileLoaded.slice(-2) == '=='){
+				mainBox.innerHTML += safeHTML('<a download="' + fileName + '" href="data:,' + URLFromFileLoaded + '">' + fileName + '</a>')	//filter before adding to the DOM
+			}else{
+				mainBox.innerHTML += safeHTML('<br>' + URLFromFileLoaded.replace(/  /g,' &nbsp;'))
+			}
+		}else{
+			mainBox.innerHTML += safeHTML('<a download="' + fileName + '" href="' + URLFromFileLoaded.replace(/=+$/,'') + '">' + fileName + '</a>')
+		}
+	}
+	if(fileToLoad.type.slice(0,4) == "text"){
+		fileReader.readAsText(fileToLoad, "UTF-8");
+		imageMsg.textContent = 'This is the content of file: ' + fileToLoad.name
+	}else{
+		fileReader.readAsDataURL(fileToLoad, "UTF-8");
+		imageMsg.textContent = 'File ' + fielToLoad.name + ' has been loaded in encoded form'
+	}
+}
+
+//to load an image into the main box
+function loadImage(){
+	var fileToLoad = imgFile.files[0],
+		fileReader = new FileReader();
+
+	fileReader.onload = function(fileLoadedEvent){
+		var URLFromFileLoaded = fileLoadedEvent.target.result;
+		if(URLFromFileLoaded.slice(0,10) != 'data:image'){
+			imageMsg.textContent = 'This file is not a recognized image type';
+			return
+		}
+		mainBox.innerHTML += safeHTML('<img style="width:100%;" src="' + URLFromFileLoaded.replace(/=+$/,'') + '">')
+	}
+	fileReader.readAsDataURL(fileToLoad, "UTF-8");
+}
+
 // load image for hiding text
 var importImage = function(e) {
     var reader = new FileReader();
@@ -215,7 +281,7 @@ var importImage = function(e) {
 function updateCapacity(){
 	//first measure PNG capacity. Subtract 4 bits used to encode k, 48 for the end marker
 	var pngBits = Math.floor(document.getElementById('preview').naturalHeight*document.getElementById('preview').naturalWidth*3) - 52,
-		textSize = b64EncodeUnicode(mainBox.value.trim()).replace(/=+$/,'').length * 6;							//text size in bits
+		textSize = b64EncodeUnicode(mainBox.innerHTML.trim()).replace(/=+$/,'').length * 6;							//text size in bits
 
 	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
 	setTimeout(function(){																				//give it 2 seconds to complete
@@ -302,7 +368,7 @@ function toBin(input){
 
 //function to encode mainBox into the image
 function encode(){
-	var text = mainBox.value.trim();
+	var text = mainBox.innerHTML.trim();
 
 	if(!text){
 		imageMsg.textContent = 'There is nothing to hide';
@@ -352,9 +418,9 @@ function decode(){
 setTimeout(function(){
 	decodeImage(preview,imagePwd.value,function(textBin,msg){
 		if(compressedMode.checked){
-			mainBox.value = LZString.decompressFromBase64(fromBin(textBin))
+			mainBox.innerHTML = safeHTML(LZString.decompressFromBase64(fromBin(textBin)))
 		}else{
-			mainBox.value = b64DecodeUnicode(fromBin(textBin))											//binary output turned to base64 first, then into UTF8 text
+			mainBox.innerHTML = safeHTML(b64DecodeUnicode(fromBin(textBin)))											//binary output turned to base64 first, then into UTF8 text
 		}
 		imagePwd.value = '';
 		imageMsg.textContent = msg
@@ -381,6 +447,49 @@ function getHistogram(array, n){
 	}
 	return output.slice(1)
 }
+
+//for rich text editing
+function formatDoc(sCmd, sValue){
+	  document.execCommand(sCmd, false, sValue); mainBox.focus()
+}
+
+//this one escapes dangerous characters, preserving non-breaking spaces
+function escapeHTML(str){
+	escapeHTML.replacements = { "&": "&amp;", '"': "&quot;", "'": "&#039;", "<": "&lt;", ">": "&gt;" };
+	str = str.replace(/&nbsp;/gi,'non-breaking-space')
+	str = str.replace(/[&"'<>]/g, function (m){
+		return escapeHTML.replacements[m];
+	});
+	return str.replace(/non-breaking-space/g,'&nbsp;')
+}
+
+//mess up all tags except those whitelisted: formatting, images, and links containing a web reference or a file
+function safeHTML(string){
+if(string){
+	//first mess up attributes with values not properly enclosed within quotes, because Chrome likes to complete those; extra replaces needed to preserve encrypted material
+	string = string.replace(/==/g,'double-equal').replace(/<(.*?)=[^"'](.*?)>/g,'').replace(/double-equal/g,'==');
+	//now escape every dangerous character; we'll recover tags and attributes on the whitelist later on
+	string = escapeHTML(string);
+	//make regular expressions containing whitelisted tags, attributes, and origins; sometimes two versions to account for single quotes
+	var allowedTags = '(b|i|strong|em|u|strike|sub|sup|blockquote|ul|ol|li|pre|div|span|a|h1|h2|h3|h4|h5|h6|p|pre|table|tbody|tr|td|img|br|wbr|hr|font)',
+		tagReg = new RegExp('&lt;(\/?)' + allowedTags + '(.*?)&gt;','gi'),
+		allowedAttribs = '(download|style|src|target|name|id|class|color|size|cellpadding|tabindex|type|start|align)',
+		attribReg1 = new RegExp(allowedAttribs + '=\&quot;(.*?)\&quot;','gi'),
+		attribReg2 = new RegExp(allowedAttribs + '=\&#039;(.*?)\&#039;','gi'),
+		allowedOrigins = '(http:\/\/|https:\/\/|mailto:\/\/|#)',
+		origReg1 = new RegExp('href=\&quot;' + allowedOrigins + '(.*?)\&quot;','gi'),
+		origReg2 = new RegExp('href=\&#039;' + allowedOrigins + '(.*?)\&#039;','gi');
+	//recover allowed tags
+	string = string.replace(tagReg,'<$1$2$3>');
+	//recover allowed attributes
+	string = string.replace(attribReg1,'$1="$2"').replace(attribReg2,"$1='$2'");
+	//recover file-containing links
+	string = string.replace(/href=\&quot;data:(.*?),(.*?)\&quot;/gi,'href="data:$1,$2"').replace(/href=\&#039;data:(.*?),(.*?)\&#039;/gi,"href='data:$1,$2'");
+	//recover web links and local anchors
+	string = string.replace(origReg1,'href="$1$2"').replace(origReg2,"href='$1$2'")
+}
+	return string
+}
 </script>
 
 </head>
@@ -397,22 +506,100 @@ function getHistogram(array, n){
   <button class="cssbutton" id="decodeBtn" value="Reveal" title="extract hidden content and put it in the box">Reveal</button>
   &nbsp;
   <button class="cssbutton" id="clearBtn" value="Clear" title="clear box">Clear</button>
-  <br />
-  <br />
-  <label for="imageFile" title="open dialog to select the cover image"><span class="cssbutton">Load image</span></label>
+  <br>
+  <br>
+  <label for="imageFile" title="open dialog to select the cover image"><span class="cssbutton">Load cover image</span></label>
   <input type='file' id='imageFile' style="display:none;"/>
 &nbsp; &nbsp;<input type="text" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:35%;padding:5px;" placeholder="optional Password"/>
-  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing">&nbsp;Compr.
-  <br />
-  <br />
-  <textarea class="cssbox" id="mainBox" title="type what you want to hide here" placeholder="1 Type what you want to hide here. 2 Load an image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password and compression."></textarea>
+  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing" checked>&nbsp;Compr.
+  <br>
+  <br>
+  <!--toolbar for rich text editing; this first section contains lists for style, fonts, etc.-->
+  <div id="toolBar1">
+    <select id="formatBlock" title="headings, etc.">
+      <option selected>- formatting -</option>
+      <option value="h1">Title 1 &lt;h1&gt;</option>
+      <option value="h2">Title 2 &lt;h2&gt;</option>
+      <option value="h3">Title 3 &lt;h3&gt;</option>
+      <option value="h4">Title 4 &lt;h4&gt;</option>
+      <option value="h5">Title 5 &lt;h5&gt;</option>
+      <option value="h6">Subtitle &lt;h6&gt;</option>
+      <option value="p">Paragraph &lt;p&gt;</option>
+      <option value="pre">Preformatted &lt;pre&gt;</option>
+    </select>
+    <select id="fontName" title="font type">
+      <option class="heading" selected>- font -</option>
+      <option>Arial</option>
+      <option>Arial Black</option>
+      <option>Courier New</option>
+      <option>Times New Roman</option>
+      <option>Verdana</option>
+      <option>Comic Sans MS</option>
+      <option>Impact</option>
+      <option>Trebuchet MS</option>
+      <option>Symbol</option>
+    </select>
+    <select id="fontSize" title="font size">
+      <option class="heading" selected>- size -</option>
+      <option value="1">Very small</option>
+      <option value="2">A bit small</option>
+      <option value="3">Normal</option>
+      <option value="4">Medium-large</option>
+      <option value="5">Big</option>
+      <option value="6">Very big</option>
+      <option value="7">Maximum</option>
+    </select>
+    <select id="foreColor" title="text color">
+      <option class="heading" selected>- color -</option>
+      <option value="brown">Brown</option>
+      <option value="red">Red</option>
+      <option value="orange">Orange</option>
+      <option value="green">Green</option>
+      <option value="blue">Blue</option>
+      <option value="purple">Violet</option>
+      <option value="violet">Pink</option>
+      <option value="yellow">Yellow</option>
+      <option value="cyan">Cyan</option>
+      <option value="white">White</option>
+      <option value="gray">Gray</option>
+      <option value="black">Black</option>
+    </select>
+    <select id="backColor" title="color behind the text">
+      <option class="heading" selected>- back color -</option>
+      <option value="brown">Brown</option>
+      <option value="red">Red</option>
+      <option value="orange">Orange</option>
+      <option value="green">Green</option>
+      <option value="blue">Blue</option>
+      <option value="purple">Violet</option>
+      <option value="violet">Pink</option>
+      <option value="yellow">Yellow</option>
+      <option value="cyan">Cyan</option>
+      <option value="white">White</option>
+      <option value="gray">Gray</option>
+      <option value="black">Black</option>
+    </select>
+
+    <!--rich text editing buttons; images are loaded as data-->
+    <div id="toolBar2"> <img class="intLink" title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=" /> <img class="intLink" title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==" /> <img class="intLink" title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7" /> <img class="intLink" title="Strikethrough" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAABGRkZxcXGrq6uOjo7CwsINDQ3p6emLJhauAAAAAXRSTlMAQObYZgAAAEVJREFUGNNjoCYoDjaBs1UZDGFMVmUGJhibXcidFa7GUVAVygpSUlJMS0uBqmFgFhSA6TVgYIOxmcUZ2BxgbEFnF2o6HQD3yAWvJ+vXvwAAAABJRU5ErkJggg==" /> <img class="intLink" title="Subscript" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEh0pePr7/WgssrS0tLH1vP156UFAAAAAXRSTlMAQObYZgAAAElJREFUGNNjoB5gDBQRFICy2YQCAhNgEomqAghFSg5wNosSkniQGktwAURYlFEp2d0AIiyYpKTGbICwJBihnd2kBM5mNjagzPEAztoHvc+7u1sAAAAASUVORK5CYII=" /> <img class="intLink" title="Superscript" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEigssrr7/V0pePS0tLH1vPtoVcWAAAAAXRSTlMAQObYZgAAAEpJREFUGNNjoC5gCTaAs5ndAxASrBA2o6GIoICpA5jNJmhg6B5SApFPUhZgDQ2AalRyQBioJABnMxqpwYWFGZUMYMKCSUpqlDocAJ7SBzNIUMnCAAAAAElFTkSuQmCC" /> <img class="intLink" title="Left align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JMGELkGYxo+qzl4nKyXAAAOw==" /> <img class="intLink" title="Center align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIfhI+py+0Po5y02ouz3jL4D4JOGI7kaZ5Bqn4sycVbAQA7" /> <img class="intLink" title="Right align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JQGDLkGYxouqzl43JyVgAAOw==" /> <img class="intLink" title="Justify" src="data:image/gif;base64,R0lGODlhFgAWAIAAAMDAwAAAACH5BAEAAAAALAAAAAAWABYAAAIghI+py+0Po2yh2nvnxNxq2XVfFHIjVGLnk2brC8fyXAAAOw==" /> <img class="intLink" title="Numbered list" src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAADljwliE35GjuaezxtHa7P///////yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKSespwjoRFvggCBUBoTFBeq6QIAysQnRHaEOzyaZ07Lu9lUBnC0UGQU1K52s6n5oEADs=" /> <img class="intLink" title="Dotted list" src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAAB1ChF9vj1iE33mOrqezxv///////yH5BAEAAAcALAAAAAAWABYAAAMyeLrc/jDKSesppNhGRlBAKIZRERBbqm6YtnbfMY7lud64UwiuKnigGQliQuWOyKQykgAAOw==" /> <img class="intLink" title="Quote" src="data:image/gif;base64,R0lGODlhFgAWAIQXAC1NqjFRjkBgmT9nqUJnsk9xrFJ7u2R9qmKBt1iGzHmOrm6Sz4OXw3Odz4Cl2ZSnw6KxyqO306K63bG70bTB0rDI3bvI4P///////////////////////////////////yH5BAEKAB8ALAAAAAAWABYAAAVP4CeOZGmeaKqubEs2CekkErvEI1zZuOgYFlakECEZFi0GgTGKEBATFmJAVXweVOoKEQgABB9IQDCmrLpjETrQQlhHjINrTq/b7/i8fp8PAQA7" /> <img class="intLink" title="Delete indentation" src="data:image/gif;base64,R0lGODlhFgAWAMIHAAAAADljwliE35GjuaezxtDV3NHa7P///yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKCQG9F2i7u8agQgyK1z2EIBil+TWqEMxhMczsYVJ3e4ahk+sFnAgtxSQDqWw6n5cEADs=" /> <img class="intLink" title="Add indentation" src="data:image/gif;base64,R0lGODlhFgAWAOMIAAAAADljwl9vj1iE35GjuaezxtDV3NHa7P///////////////////////////////yH5BAEAAAgALAAAAAAWABYAAAQ7EMlJq704650B/x8gemMpgugwHJNZXodKsO5oqUOgo5KhBwWESyMQsCRDHu9VOyk5TM9zSpFSr9gsJwIAOw==" /> <img class="intLink" title="Horizontal rule" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAADIyMimpqbp6enz8/P8/PzZ2dldXV27aT9/AAAAAXRSTlMAQObYZgAAAD5JREFUGNNjoBg4GSDYSgpYFCQKgkECiC0aGuLi7GwsAGILKYGBABYt5QUwVoiZuJhJAITN6mxs7Apk0wIAACMpB/oWEo0pAAAAAElFTkSuQmCC" /> <img class="intLink" title="Hyperlink" src="data:image/gif;base64,R0lGODlhFgAWAOMKAB1ChDRLY19vj3mOrpGjuaezxrCztb/I19Ha7Pv8/f///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARY8MlJq7046827/2BYIQVhHg9pEgVGIklyDEUBy/RlE4FQF4dCj2AQXAiJQDCWQCAEBwIioEMQBgSAFhDAGghGi9XgHAhMNoSZgJkJei33UESv2+/4vD4TAQA7" /> <img class="intLink" title="Remove hyperlink" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAAD08fHXzcxjY2OMhoafn5+uLyrktrTVXxhsAAAAAXRSTlMAQObYZgAAAGxJREFUGNNjwAAFMAZjEkMCYyKUU6aQoAaTYU90TIcrFwBCCFANDWIKDVUAMZkcBUVZBQWDQGwWERcnJhcXETBbBUEyKzubsjobK4PYrEZCwsxCQqZgc4KNTVmMjQOQzIfbW5jOgOYehDspAwBt9Q/S3exo3wAAAABJRU5ErkJggg==" /> <img class="intLink" title="Remove formatting" src="data:image/gif;base64,R0lGODlhFgAWAIQbAD04KTRLYzFRjlldZl9vj1dusY14WYODhpWIbbSVFY6O7IOXw5qbms+wUbCztca0ccS4kdDQjdTLtMrL1O3YitHa7OPcsd/f4PfvrvDv8Pv5xv///////////////////yH5BAEKAB8ALAAAAAAWABYAAAV84CeOZGmeaKqubMteyzK547QoBcFWTm/jgsHq4rhMLoxFIehQQSAWR+Z4IAyaJ0kEgtFoLIzLwRE4oCQWrxoTOTAIhMCZ0tVgMBQKZHAYyFEWEV14eQ8IflhnEHmFDQkAiSkQCI2PDC4QBg+OAJc0ewadNCOgo6anqKkoIQA7" /> <img class="intLink" title="Undo" src="data:image/gif;base64,R0lGODlhFgAWAOMKADljwliE33mOrpGjuYKl8aezxqPD+7/I19DV3NHa7P///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARR8MlJq7046807TkaYeJJBnES4EeUJvIGapWYAC0CsocQ7SDlWJkAkCA6ToMYWIARGQF3mRQVIEjkkSVLIbSfEwhdRIH4fh/DZMICe3/C4nBQBADs=" /> <img class="intLink" title="Redo" src="data:image/gif;base64,R0lGODlhFgAWAMIHAB1ChDljwl9vj1iE34Kl8aPD+7/I1////yH5BAEKAAcALAAAAAAWABYAAANKeLrc/jDKSesyphi7SiEgsVXZEATDICqBVJjpqWZt9NaEDNbQK1wCQsxlYnxMAImhyDoFAElJasRRvAZVRqqQXUy7Cgx4TC6bswkAOw==" />
+<label for="imgFile">
+<img class="intLink" title="Insert image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAbFBMVEUAAAAAAAAmJibm5uaJiYnZ2dnn5+e5ubmBgYHNzc3z8/Pr6+vW1ta2trZ/f3/y8vLQ0NDPz8/Dw8OgoKCOjo54eHgcHBwGBgb+/v7T09PIyMi+vr6srKyEhIRqampiYmJbW1tPT08qKioRERGLOctyAAAAAXRSTlMAQObYZgAAAHJJREFUGNOtzkkShCAQRNFKbLsVsZ3nWe9/R8EAYeHSv6u3qEh6qo0/TkUiKULNbCglfZGSjf0vCvWZLTmxwBBXVGG1NO2D+hoIQ6IHmrKrciJDfgxIBGbPId12E//pUjOiyHydCGtFyQG3kWTcc4ro1U7vPAUU4TAxJQAAAABJRU5ErkJggg==" />
+</label>
+<input type="file" id="imgFile" style="display:none" />
+<label for="mainFile">
+<img class="intLink" title="Load a file" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAATlBMVEUAAAAAAAD19fVcXFwbGxsTExP8/PzT09NxcXFaWlo4ODg1NTUEBAT5+fnw8PDr6+vU1NTIyMi+vr6Xl5dsbGxnZ2dXV1dISEghISEMDAw0f0rSAAAAAXRSTlMAQObYZgAAAFBJREFUGNO9yEkOgCAQBMBmUxDc9/9/VJ2EjgkHb9axcJuceqQRtMq4aAdWkDr6xtW5jJRFx2MBu23fdS7eG6Vz0U8VytrKmhMnVoDQlOfbBQLIAl4FF2fyAAAAAElFTkSuQmCC" />
+</label>
+<input type="file" id="mainFile" style="display:none" />
+</div>
+  </div>
+  <div id="mainBox" contenteditable="true" class="cssbox" placeholder="1 Type what you want to hide here; you can also insert images and files. 2 Load a cover image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password and keep Compr. checked. To reveal the hidden content, load the image, type the Password, and click Reveal."></div>
 </div>
 <div id="rightPanel" style="width: 50%; height: 100%; float: right;">
-  <br />
-  <br />
+  <br>
+  <br>
   <div id="imageMsg" style="height:30px;"></div>
-  <br />
-  <br />
+  <br>
+  <br>
   <img id="preview" src="" width="100%"/>
 </div>
 
@@ -423,7 +610,7 @@ window.onload = function() {
 //resizes main box so it fits within the window
 	function textHeight(){
 		var	fullHeight = document.documentElement.clientHeight,
-			offsetHeight = 250;
+			offsetHeight = 300;
 		mainBox.style.height = fullHeight - offsetHeight + 'px'
 	}
 	
@@ -431,6 +618,12 @@ window.onload = function() {
 	
 //event listeners for buttons etc.
 	window.addEventListener('resize',textHeight);
+
+	mainFile.addEventListener('change', loadFileAsURL);
+	mainFile.addEventListener('click', function(){this.value = '';});
+
+	imgFile.addEventListener('change', loadImage);
+	imgFile.addEventListener('click', function(){this.value = '';});
 
 	imageFile.addEventListener('change', importImage);
 	imageFile.addEventListener('click', function(){this.value = '';});
@@ -441,7 +634,36 @@ window.onload = function() {
 
     decodeBtn.addEventListener('click', decode);
 	
-	clearBtn.addEventListener('click', function(){mainBox.value = '';});
+	clearBtn.addEventListener('click', function(){mainBox.innerHTML = '';});
+	
+	//for the rich text editor boxes and buttons
+	formatBlock.addEventListener("change", function() {formatDoc('formatBlock',this[this.selectedIndex].value);this.selectedIndex=0;});
+	fontName.addEventListener("change", function() {formatDoc('fontName',this[this.selectedIndex].value);this.selectedIndex=0;});
+	fontSize.addEventListener("change", function() {formatDoc('fontSize',this[this.selectedIndex].value);this.selectedIndex=0;});
+	foreColor.addEventListener("change", function() {formatDoc('foreColor',this[this.selectedIndex].value);this.selectedIndex=0;});
+	backColor.addEventListener("change", function() {formatDoc('backColor',this[this.selectedIndex].value);this.selectedIndex=0;});
+
+	document.images[0].addEventListener("click", function() {formatDoc('bold')});
+	document.images[1].addEventListener("click", function() {formatDoc('italic')});
+	document.images[2].addEventListener("click", function() {formatDoc('underline')});
+	document.images[3].addEventListener("click", function() {formatDoc('strikethrough')});
+	document.images[4].addEventListener("click", function() {formatDoc('subscript')});
+	document.images[5].addEventListener("click", function() {formatDoc('superscript')});
+	document.images[6].addEventListener("click", function() {formatDoc('justifyleft')});
+	document.images[7].addEventListener("click", function() {formatDoc('justifycenter')});
+	document.images[8].addEventListener("click", function() {ormatDoc('justifyright')});
+	document.images[9].addEventListener("click", function() {formatDoc('justifyfull')});
+	document.images[10].addEventListener("click", function() {formatDoc('insertorderedlist')});
+	document.images[11].addEventListener("click", function() {formatDoc('insertunorderedlist')});
+	document.images[12].addEventListener("click", function() {formatDoc('formatBlock','blockquote')});
+	document.images[13].addEventListener("click", function() {formatDoc('outdent')});
+	document.images[14].addEventListener("click", function() {formatDoc('indent')});
+	document.images[15].addEventListener("click", function() {formatDoc('inserthorizontalrule')});
+	document.images[16].addEventListener("click", function() {var sLnk=prompt('Write the URL here','http:\/\/');if(sLnk&&sLnk!=''&&sLnk!='http://'){formatDoc('createlink',sLnk)}});
+	document.images[17].addEventListener("click", function() {formatDoc('unlink')});
+	document.images[18].addEventListener("click", function() {formatDoc('removeFormat')});
+	document.images[19].addEventListener("click", function() {formatDoc('undo')});
+	document.images[20].addEventListener("click", function() {formatDoc('redo')});
 }
 </script>
 
