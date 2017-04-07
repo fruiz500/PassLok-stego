@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" manifest="passlokstego.appcache">
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" manifest="passlokimage.appcache">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>PassLok stego</title>
+<title>PassLok Image</title>
 <meta name="Keywords" content="steganography, F5, passlok, URSA, browser, encryption, decryption, symmetric, public key, signature, AES, ECDH, Diffie, Hellman, elliptic curve, advanced, javascript, PGP, PRISM">
 <meta name="Description" content="PassLok Image Steganography">
 <meta name="author" content="F. Ruiz">
@@ -63,6 +63,18 @@ body {
 	background: #fffff5;
 	border: 1px solid #dedede;
 	overflow: auto;
+}
+.helpitem {
+	font-size: medium;
+	cursor: pointer;
+	padding: 1px;
+}
+.helpitem:hover {
+	background-color: #eeeeee;
+}
+.helptext {
+	font-size: medium;
+	display: none;
 }
 .blink {
 	-webkit-animation: blink .75s linear infinite;
@@ -220,6 +232,9 @@ opacity: 0;
 
 <!--ORIGINAL PassLok-stego CODE, largely based on F5 by A. Westfeld 2001-->
 <script src="lib/plstego.js"></script>
+
+<!--this only loads two regular expressions: blackListExp and wordListExp, plus their lengths-->
+<script src="lib-extra/dictionary_en.js"></script>
 
 <!--code specific to this HTML document-->
 <script>
@@ -386,22 +401,24 @@ function encode(){
 		var array2embed = toBin(b64EncodeUnicode(text).replace(/=+$/,''))
 	}
 	
+	var iter = smartPwdMode.checked && imagePwd.value ? keyStrength(imagePwd.value,false) : 0;
+	
 	if(this.id == 'encodePNGBtn'){
 		setTimeout(function(){
 			encodePNG(preview,array2embed,imagePwd.value,function(msg){		//text is made base64 first, then a binary array
 				imagePwd.value = '';
-				imageMsg.textContent = msg
+				if(msg) imageMsg.textContent = msg
 			},
-			compressedMode.checked);												//no extra noise added if compressed
+			false,iter);															//iter: add extra computations for weak Passwords; false: add extra noise even if compressed
 			imagePwd.value = ''
 		},10)
 	}else{
 		setTimeout(function(){
 			encodeJPG(preview,array2embed,imagePwd.value,function(msg){
 				imagePwd.value = '';
-				imageMsg.textContent = msg
+				if(msg) imageMsg.textContent = msg
 			},
-			compressedMode.checked);
+			false,iter);
 			imagePwd.value = ''
 		},10)
 	}
@@ -415,6 +432,8 @@ function encode(){
 function decode(){	
 	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
 	
+	var iter = smartPwdMode.checked && imagePwd.value ? keyStrength(imagePwd.value,false) : 0;
+	
 setTimeout(function(){
 	decodeImage(preview,imagePwd.value,function(textBin,msg){
 		if(compressedMode.checked){
@@ -422,10 +441,16 @@ setTimeout(function(){
 		}else{
 			mainBox.innerHTML = safeHTML(b64DecodeUnicode(fromBin(textBin)))											//binary output turned to base64 first, then into UTF8 text
 		}
+		if(msg.slice(0,6) == 'Reveal'){
+			msg = 'Decrypt successful';
+			mainBox.focus()
+		}else{
+			imagePwd.focus()
+		}
 		imagePwd.value = '';
 		imageMsg.textContent = msg
 		},
-		compressedMode.checked)																			//no extra noise to remove if compressed
+		false,iter)
 },10)
 }
 
@@ -446,6 +471,40 @@ function getHistogram(array, n){
 		output[2*i+1] = counter2
 	}
 	return output.slice(1)
+}
+
+//this is for showing and hiding text in the Password box
+function showPwd(){
+	if(showPwdMode.checked){
+		imagePwd.type = "text"
+	}else{
+		imagePwd.type = "password"
+	}
+}
+
+//for opening the help screen and back
+function main2help(){
+	if(mainScr.style.display == 'block'){
+		mainScr.style.display = 'none';
+		helpScr.style.display = 'block'
+	}else{
+		mainScr.style.display = 'block';
+		helpScr.style.display = 'none'
+	}
+}
+
+//for opening one item at a time in the Help screen
+function openHelp(theID){
+	var helpItems = document.getElementsByClassName('helptext');
+	for(var i=0; i < helpItems.length; i++){
+		helpItems[i].style.display = 'none'
+	}
+	document.getElementById(theID).style.display = "block";
+
+	if(typeof window.orientation != 'undefined'){					//scroll to the item on Mobile
+		location.href = '#';
+		location.href = '#a' + theID;
+	}
 }
 
 //for rich text editing
@@ -490,28 +549,127 @@ if(string){
 }
 	return string
 }
+
+//The rest is modified from WiseHash. https://github.com/fruiz500/whisehash
+//function to test key strength and come up with appropriate key stretching. Based on WiseHash
+function keyStrength(pwd,display) {
+	var entropy = entropycalc(pwd);
+
+	if(entropy == 0){
+		var msg = 'This is a known <span style="color:magenta">bad Password!</span>' + ' Speed will be CRAWLING!';
+	}else if(entropy < 20){
+		var msg = '<span style="color:magenta">Terrible!</span>' + ' Speed will be VERY SLOW';
+	}else if(entropy < 40){
+		var msg = '<span style="color:red">Weak!</span>' + ' Speed will be slow';
+	}else if(entropy < 60){
+		var msg = '<span style="color:orange">Medium</span>' + ' Speed may be sluggish';
+	}else if(entropy < 90){
+		var msg = '<span style="color:lime">Good!</span>';
+	}else if(entropy < 120){
+		var msg = '<span style="color:blue">Great!</span>' + ' This will be snappy';
+	}else{
+		var msg = '<span style="color:cyan">Overkill  !!</span>' + ' This will FLY!';;
+	}
+
+	var iter = Math.max(0,Math.min(20,Math.ceil(24 - entropy/5)));			//set the iteration exponent based on entropy: 0 for entropy >= 120, 20(max) for entropy <= 20
+
+	if(display) imageMsg.innerHTML = 'Password entropy: ' + Math.round(entropy*100)/100 + ' bits. ' + msg;
+
+	return iter
+}
+
+//takes a string and calculates its entropy in bits, taking into account the kinds of characters used and parts that may be in the general wordlist (reduced credit) or the blacklist (no credit)
+function entropycalc(pwd){
+
+//find the raw Keyspace
+	var numberRegex = new RegExp("^(?=.*[0-9]).*$", "g");
+	var smallRegex = new RegExp("^(?=.*[a-z]).*$", "g");
+	var capRegex = new RegExp("^(?=.*[A-Z]).*$", "g");
+	var base64Regex = new RegExp("^(?=.*[/+]).*$", "g");
+	var otherRegex = new RegExp("^(?=.*[^a-zA-Z0-9/+]).*$", "g");
+
+	pwd = pwd.replace(/\s/g,'');										//no credit for spaces
+
+	var Ncount = 0;
+	if(numberRegex.test(pwd)){
+		Ncount = Ncount + 10;
+	}
+	if(smallRegex.test(pwd)){
+		Ncount = Ncount + 26;
+	}
+	if(capRegex.test(pwd)){
+		Ncount = Ncount + 26;
+	}
+	if(base64Regex.test(pwd)){
+		Ncount = Ncount + 2;
+	}
+	if(otherRegex.test(pwd)){
+		Ncount = Ncount + 31;											//assume only printable characters
+	}
+
+//start by finding words that might be on the blacklist (no credit)
+	var pwd = reduceVariants(pwd);
+	var wordsFound = pwd.match(blackListExp);							//array containing words found on the blacklist
+	if(wordsFound){
+		for(var i = 0; i < wordsFound.length;i++){
+			pwd = pwd.replace(wordsFound[i],'');						//remove them from the string
+		}
+	}
+
+//now look for regular words on the wordlist
+	wordsFound = pwd.match(wordListExp);									//array containing words found on the regular wordlist
+	if(wordsFound){
+		wordsFound = wordsFound.filter(function(elem, pos, self) {return self.indexOf(elem) == pos;});	//remove duplicates from the list
+		var foundLength = wordsFound.length;							//to give credit for words found we need to count how many
+		for(var i = 0; i < wordsFound.length;i++){
+			pwd = pwd.replace(new RegExp(wordsFound[i], "g"),'');									//remove all instances
+		}
+	}else{
+		var foundLength = 0;
+	}
+
+	pwd = pwd.replace(/(.+?)\1+/g,'$1');								//no credit for repeated consecutive character groups
+
+	if(pwd != ''){
+		return (pwd.length*Math.log(Ncount) + foundLength*Math.log(wordLength + blackLength))/Math.LN2
+	}else{
+		return (foundLength*Math.log(wordLength + blackLength))/Math.LN2
+	}
+}
+
+//take into account common substitutions, ignore spaces and case
+function reduceVariants(string){
+	return string.toLowerCase().replace(/[óòöôõo]/g,'0').replace(/[!íìïîi]/g,'1').replace(/[z]/g,'2').replace(/[éèëêe]/g,'3').replace(/[@áàäâãa]/g,'4').replace(/[$s]/g,'5').replace(/[t]/g,'7').replace(/[b]/g,'8').replace(/[g]/g,'9').replace(/[úùüû]/g,'u');
+}
 </script>
 
 </head>
 
 <body>
 
-<!--User interface, consisting of two panels side by side-->
+<!--Main screen, consisting of two panels side by side-->
+<div id="mainScr" style="display:block;">
 <div id="leftPanel" style="width: 45%; height: 100%; float: left;">
-<h3>PassLok image steganography</h3><p>&copy; F. Ruiz 2017</p>
-  <button class="cssbutton" id="encodePNGBtn" value="PNG Hide" title="hide box contents into PNG image">PNG hide</button>
+<h3>PassLok Image Encryption</h3><p>&copy; F. Ruiz 2017</p>
+  <button class="cssbutton" id="encodePNGBtn" value="PNG Hide" title="encrypt box contents into PNG image (alt-P)" accesskey="p">Encrypt to PNG</button>
   &nbsp;
-  <button class="cssbutton" id="encodeJPGBtn" value="JPG Hide" title="hide box contents into JPG image">JPG hide</button>
+  <button class="cssbutton" id="encodeJPGBtn" value="JPG Hide" title="encrypt box contents into JPG image (alt-J)" accesskey="j">Encrypt to JPG</button>
   &nbsp;
-  <button class="cssbutton" id="decodeBtn" value="Reveal" title="extract hidden content and put it in the box">Reveal</button>
+  <button class="cssbutton" id="decodeBtn" value="Reveal" title="decrypt content hidden in the image and put it in the box (alt-D)" accesskey="d">Decrypt</button>
   &nbsp;
-  <button class="cssbutton" id="clearBtn" value="Clear" title="clear box">Clear</button>
+  <button class="cssbutton" id="clearBtn" value="Clear" title="clear box (alt-C)" accesskey="c">Clear</button>
+  &nbsp;
+  <button class="cssbutton" id="helpBtn" value="Help" style="" title="get help on this program (alt-H)" accesskey="h">Help</button>
   <br>
   <br>
-  <label for="imageFile" title="open dialog to select the cover image"><span class="cssbutton">Load cover image</span></label>
+  <label for="imageFile" title="open dialog to select the cover image (alt-L)" accesskey="l"><span class="cssbutton">Load cover image</span></label>
   <input type='file' id='imageFile' style="display:none;"/>
-&nbsp; &nbsp;<input type="text" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:35%;padding:5px;" placeholder="optional Password"/>
-  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing" checked>&nbsp;Compr.
+&nbsp; &nbsp;<input type="password" class="cssbox" id="imagePwd" title="use password for better undetectability" style="width:35%;padding:5px;" placeholder="optional Password"/>
+  <br>
+  <br>&nbsp;&nbsp;
+  <input type='checkbox' id='showPwdMode' title="check this to see the Password">&nbsp;Show Pwd.&nbsp;&nbsp;
+  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing" checked>&nbsp;Compressed&nbsp;&nbsp;
+  <input type='checkbox' id='smartPwdMode' title="check this to use smart Password stretching, also when revealing" checked>&nbsp;Smart Pwd.
   <br>
   <br>
   <!--toolbar for rich text editing; this first section contains lists for style, fonts, etc.-->
@@ -592,7 +750,7 @@ if(string){
 <input type="file" id="mainFile" style="display:none" />
 </div>
   </div>
-  <div id="mainBox" contenteditable="true" class="cssbox" placeholder="1 Type what you want to hide here; you can also insert images and files. 2 Load a cover image with the button. 3 Click either PNG hide or JPG hide. For best results, use a Password and keep Compr. checked. To reveal the hidden content, load the image, type the Password, and click Reveal."></div>
+  <div id="mainBox" contenteditable="true" class="cssbox" placeholder="1 Type what you want to hide here; you can also insert images and files. 2 Load a cover image with the button. 3 Click either Encrypt to PNG or Encrypt to JPG. For best results, use a Password and keep Compressed and Smart Pwd. checked. To reveal the hidden content, load the image, type the Password, and click Decrypt."></div>
 </div>
 <div id="rightPanel" style="width: 50%; height: 100%; float: right;">
   <br>
@@ -602,6 +760,91 @@ if(string){
   <br>
   <img id="preview" src="" width="100%"/>
 </div>
+</div>
+
+<!--Help screen-->
+<div id="helpScr" style="max-width:1200px;margin-left:auto;margin-right:auto;display:none;">
+  <h2 style="color:green;font-size:x-large;">Welcome to PassLok Image Encryption</h2>
+  <button class="cssbutton" id="help2mainBtnTop" value="< Back" style="float:left;" title="return to main screen (alt-M)" accesskey='m'>&#9668; Back</button>
+  <br />
+  &nbsp;&nbsp;&nbsp;<span id='helpmsg'>For help on how to do things, click on each title.</span><br>
+  <br>
+  <hr>
+  <div id="aa1" class="helpitem">
+    <h3>What is PassLok Image Encryption?</h3>
+  </div>
+  <div id="a1" class="helptext">
+    <p>PassLok Image Encryption encrypts text, images, and files, and hides them inside the data of jpeg or png images. If you supply a Password, it becomes extremely difficult even to detect that there is anything contained in that image. Only those possessing the same Password can retrieve the contents.</p>
+    <p>This program uses the image hiding functions of PassLok Privacy and PassLok for Email (both available from <a href="https://passlok.com" target="_blank">https://passlok.com</a>) but is a standalone encryption program on its own right. Its output is not compatible with those programs because the encryption engine is different.</p>
+    <p>PassLok Image Encryption runs on a browser and is platform-independent. It has difficulty running on iOS, however, because of bugs in the jpeg-encoding libraries.</p>
+    <p>Ths program is <em>still in experimental phase</em>, as it has not yet been duly vetted by experts. Bear this in mind before entrusting sensitive information to it.</p>
+    <p>If you want more capability, you may want to try the full PassLok Privacy, from <a href="https://passlok.com/app" target="_blank">https://passlok.com/app</a>, which is capable of asymmetric encryption (you don't give your Password to anyone) plus signatures and secret splitting. There is also PassLok for Email, available for <a href="https://chrome.google.com/webstore/detail/passlok-for-email/ehakihemolfjgbbfhkbjgahppbhecclh" target="_blank">Chrome</a> and <a href="https://addons.mozilla.org/en-US/firefox/addon/passlok-for-email/" target="_blank">Firefox</a>, which integrates with popular webmail services.</p>
+  </div>
+  <hr>
+  <div id="aa2" class="helpitem">
+    <h3>How do I use the program?</h3>
+  </div>
+  <div id="a2" class="helptext">
+    <p>To encrypt, just type what you want to encrypt into the big box, and the Password in the top box (optional but highly recommended), load an image with the big button, and click either <strong>Encrypt to PNG</strong> or <strong>Encrypt to JPG</strong>. The original format of the image does not matter. Save the resulting message-containing image, which will still look very much like the original, by right-clicking on it and choosing <strong>Save Image As...</strong></p>
+    <p>To decrypt, load the image with the big button and type in the optional Password, then click <strong>Decrypt</strong>. If successful, the encrypted message will appear in the big box.</p>
+    <p>You'll be able to store more text if  you leave the <strong>Compressed</strong> check on. If you check <strong>Smart Pwd.</strong>, computations will be added for weak passwords, thus increasing overall security. The state of these checkboxes must be the same for encryption and decryption.</p>
+    <p>The program will run from a saved file, so you don't have to be online in order to use it.</p>
+  </div>
+  <hr>
+  <div id="aa3" class="helpitem">
+    <h3>Can I encrypt files and images?</h3>
+  </div>
+  <div id="a3" class="helptext">
+    <p>You have two choices:</p>
+    <p>1. Encrypt the files using AES with a utility such as <a href="http://www.7-zip.org/" target="_blank">7-zip</a> (Windows), <a href="http://www.kekaosx.com/" target="_blank">Keka</a> (OSX), or p7zip (Linux), then encrypt the encryption password into an image, and attach both image and encrypted archive to your email.</p>
+    <p>2. You can also load files using the button at the right end of the formatting toolbar, which will load each file as a link, and then encrypt them as a regular message. If the file loaded is text, it will load as text rather than as a link. After decryption, the recipient can save each file by right-clicking it and selecting "Save Link as..."</p>
+    <p>Images can be loaded as described above or directly as image, by clicking the image icon on the rich text toolbar, and are encrypted just like text.  </p>
+  </div>
+  <hr>
+  <div id="aa4" class="helpitem">
+    <h3>Keyboard shortcuts</h3>
+  </div>
+  <div id="a4" class="helptext">
+    <p>The main functions can be accessed directly from the keyboard. The button tooltips tell you what the shortcut is for each button that has a shortcut, but below is a list just in case:</p>
+    <ul>
+      <p>Alt-P: Encrypt to <strong>P</strong>NG</p>
+      <p>Alt-J: Encrypt to <strong>J</strong>PG</p>
+      <p>Alt-D: <strong>D</strong>ecrypt</p>
+      <p>Alt-C: <strong>C</strong>lear</p>
+      <p>Alt-H: <strong>H</strong>elp and back    </p>
+    </ul>
+  </div>
+  <hr>
+  <div id="aa5" class="helpitem">
+    <h3>Privacy Statement and Warrant Canary</h3>
+  </div>
+  <div id="a5" class="helptext">
+    <p>PassLok Image Encryption  is a self-contained piece of code that does not rely on servers to do its job. Therefore:</p>
+    <p><strong>1. We cannot give your Password to anyone</strong> (not even yourself) because we don't have it.</p>
+    <p><strong>2. We cannot give your private data to anyone</strong> because the app does not send anything out of your device, either. When you download the app from the web server, you get only the code, without any cookies, plugins, or anything of that sort.</p>
+    <p><strong>4. We will never weaken the cryptography methods contained within the program at the request of a third party, private or public.</strong> This also means no backdoors will ever be added. We would rather shut down the project than be forced to do this, which would betray the very essence of our efforts. If we learn that a counterfeit version of the program is circulating, whether placed by hackers or government agencies, we will make the fact known to users.</p>
+    <p><strong>Notice:</strong> Since this program is distributed as a piece of human-readable code, we consider it an expression of free speech protected by the laws of many countries. Putting into circulation tampered versions of the program, whether by individuals or public entities, violates free speech and copyright protection laws.</p>
+    <p>PassLok Image Encryption contains strong cryptographic methods, which may be illegal to use in some countries. Please check the local laws before using it.</p>
+    <div id="canary" style="float:left;"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8BAMAAADI0sRBAAAAGFBMVEUAAAAAAAD///91XhdgYGCcnJzMzMzUqipkv+fEAAAAAXRSTlMAQObYZgAAAYFJREFUOMt1lLGOgzAQREEUaVkHkhpEUkOVmvsDIt31IF1PdP8vnWwzHtaGKRDmsbO7eHGm9Cfyys4km/ojmEvQ/ZBS10N6Gl+I18/v6G/KtCrTOnVuscbWSwsxPYPBwEsGw1nxgEGpxoUzuI00MjuDqWdwvyD4e88nuOdbMFOge3j79V3liHAjL7np4kt4u5V2fwS8bGbbHd3hjZ0wyt1hZAzuxL3FZoffqrUSlaG4qqU2HFbMfoplj68pNqr0T4xF4SFUMyJcY+EqxVgTS4QlwkZjrAXSubFRsw4H5p5BxLlIgwfTIW6DoXafPcYkqN74zRf3uN7bf2HHChvnuMGX7WoRYD8tTN/4q2CS/YQ8tvY79GwsXjO3J6jq/Qz7Mds8ds5RSDypAmz4zSr1E/EfQ9MJHjDd5PSGu1Vt8Q3BOBrVDuNdnj0DB2RCvH0xPpnYHoLhXmluXdajU7E7ONOj+YyP5Fzx9MDHQHIkQGCv1WtcaFqSkKeUumjnVB80TP0D1fGXaRHBg/YAAAAASUVORK5CYII=">
+    <p>This paragraph and the canary logo above attest to the fact that, up until the release of version 1.0 (March 2017) we have not received any requests under gag order for user data or modifications of the code. This paragraph will be periodically updated as this situation continues.</p>
+    </div>
+  </div>
+  <hr>
+  <address>
+  PassLok Image Encryption 1.0 &#169; F. Ruiz 2017
+  </address>
+  <ul><li>stego engine based on F5, by A. Westfeld 2001</li>
+    <li> jpeg image hiding libraries js-steg by Owen Campbell-Moore et al. 2014</li>
+    <li> isaac seedable PRNG by Yves-Marie Rinquin 2012</li>
+    <li> lz-string compression by pieroxy 2014</li>
+    <li> smart Password engine based on WiseHash by F. Ruiz 2014</li>
+  </ul>
+  <address>
+  This document may be used, modified or redistributed under GNU GPL license, version 3.0 or higher.
+  </address>
+  <br>
+  <button class="cssbutton" id="help2mainBtnBottom" value="< Back" style="float:left;" title="return to main screen (alt-M)">&#9668; Back</button>
+</div>
 
 <!--Body script: window reformatting, button event listeners-->
 <script>
@@ -610,12 +853,12 @@ window.onload = function() {
 //resizes main box so it fits within the window
 	function textHeight(){
 		var	fullHeight = document.documentElement.clientHeight,
-			offsetHeight = 300;
+			offsetHeight = 350;
 		mainBox.style.height = fullHeight - offsetHeight + 'px'
 	}
-	
+
 	textHeight();
-	
+
 //event listeners for buttons etc.
 	window.addEventListener('resize',textHeight);
 
@@ -633,9 +876,21 @@ window.onload = function() {
 	encodeJPGBtn.addEventListener('click', encode);
 
     decodeBtn.addEventListener('click', decode);
-	
+
 	clearBtn.addEventListener('click', function(){mainBox.innerHTML = '';});
-	
+
+	imagePwd.addEventListener('keyup', function(){if(smartPwdMode.checked) keyStrength(imagePwd.value,true)});
+
+	showPwdMode.addEventListener('click', showPwd);
+
+	smartPwdMode.addEventListener('click', function(){imageMsg.textContent = ''});
+
+	helpBtn.addEventListener('click', main2help);
+
+	help2mainBtnTop.addEventListener('click', main2help);
+
+	help2mainBtnBottom.addEventListener('click', main2help);
+
 	//for the rich text editor boxes and buttons
 	formatBlock.addEventListener("change", function() {formatDoc('formatBlock',this[this.selectedIndex].value);this.selectedIndex=0;});
 	fontName.addEventListener("change", function() {formatDoc('fontName',this[this.selectedIndex].value);this.selectedIndex=0;});
@@ -664,6 +919,13 @@ window.onload = function() {
 	document.images[18].addEventListener("click", function() {formatDoc('removeFormat')});
 	document.images[19].addEventListener("click", function() {formatDoc('undo')});
 	document.images[20].addEventListener("click", function() {formatDoc('redo')});
+	
+	//for the help screen
+	aa1.addEventListener('click', function() {openHelp('a1')});
+	aa2.addEventListener('click', function() {openHelp('a2')});
+	aa3.addEventListener('click', function() {openHelp('a3')});
+	aa4.addEventListener('click', function() {openHelp('a4')});
+	aa5.addEventListener('click', function() {openHelp('a5')});
 }
 </script>
 
