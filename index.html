@@ -294,9 +294,7 @@ var importImage = function(e) {
 
 //show how much text can be hidden in the image
 function updateCapacity(){
-	//first measure PNG capacity. Subtract 4 bits used to encode k, 48 for the end marker
-	var pngBits = Math.floor(document.getElementById('preview').naturalHeight*document.getElementById('preview').naturalWidth*3) - 52,
-		textSize = b64EncodeUnicode(mainBox.innerHTML.trim()).replace(/=+$/,'').length * 6;							//text size in bits
+	var	textSize = b64EncodeUnicode(mainBox.innerHTML.trim()).replace(/=+$/,'').length * 6;							//text size in bits
 
 	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
 	setTimeout(function(){																				//give it 2 seconds to complete
@@ -304,6 +302,22 @@ function updateCapacity(){
 	},2000)	
 
 setTimeout(function(){
+	//start measuring png capacity. Subtract 4 bits used to encode k, 48 for the end marker
+	var shadowCanvas = document.createElement('canvas'),
+		shadowCtx = shadowCanvas.getContext('2d');
+	shadowCanvas.style.display = 'none';
+
+	shadowCanvas.width = preview.naturalWidth;
+	shadowCanvas.height = preview.naturalHeight;
+	shadowCtx.drawImage(preview, 0, 0, shadowCanvas.width, shadowCanvas.height);
+	
+	var imageData = shadowCtx.getImageData(0, 0, shadowCanvas.width, shadowCanvas.height),
+		opaquePixels = 0;
+	for(var i = 3; i < imageData.data.length; i += 4){				//look at alpha channel values
+		if(imageData.data[i] == 255) opaquePixels++					//use pixels with full opacity only
+	}
+	var pngBits = opaquePixels * 3 - 270;								//4 bits used to encode k, 48 for the end marker, 218 buffer for second message
+
 	//now measure jpeg capacity
 	if(document.getElementById('preview').src.slice(11,15) == 'jpeg'){					//true jpeg capacity calculation
 		var lumaCoefficients = [],
@@ -324,7 +338,7 @@ setTimeout(function(){
 					count += firstCount													//repeat count if the channel appears not to exist (bug in js-steg)
 				}
 			}
-			var jpgBits = Math.floor(count - 52);					//4 bits used to encode k, 48 for the end marker
+			var jpgBits = Math.floor(count - 270);
 
 			imageMsg.textContent = 'This image can hide ' + pngBits + ' bits as PNG, ' + jpgBits + ' as JPG. The box contains ' + textSize + ' bits before compression'
 		})
@@ -401,24 +415,39 @@ function encode(){
 		var array2embed = toBin(b64EncodeUnicode(text).replace(/=+$/,''))
 	}
 	
-	var iter = smartPwdMode.checked && imagePwd.value ? keyStrength(imagePwd.value,false) : 0;
+	var pwdArray = imagePwd.value.split('|'); 														//in case there is a hidden message and password
+	
+	var iter = smartPwdMode.checked && pwdArray[0] ? keyStrength(pwdArray[0],false) : 0;
+	
+	if(pwdArray[1]) var iter2 = smartPwdMode.checked ? keyStrength(pwdArray[1],false) : 0;		//for hidden message
+	if(pwdArray[2]){
+		if(compressedMode.checked){
+			var array2embed2 = toBin(LZString.compressToBase64(pwdArray[2]).replace(/=+$/,''))
+		}else{
+			var array2embed2 = toBin(b64EncodeUnicode(pwdArray[2]).replace(/=+$/,''))
+		}
+	}
 	
 	if(this.id == 'encodePNGBtn'){
 		setTimeout(function(){
-			encodePNG(preview,array2embed,imagePwd.value,function(msg){		//text is made base64 first, then a binary array
+			encodePNG(preview,array2embed,pwdArray[0],function(msg){		//text is made base64 first, then a binary array
 				imagePwd.value = '';
 				if(msg) imageMsg.textContent = msg
 			},
-			false,iter);															//iter: add extra computations for weak Passwords; false: add extra noise even if compressed
+			false,iter,															//iter: add extra computations for weak Passwords; false: add extra noise even if compressed
+			array2embed2,pwdArray[1],iter2										//for hidden message, if any
+			);
 			imagePwd.value = ''
 		},10)
 	}else{
 		setTimeout(function(){
-			encodeJPG(preview,array2embed,imagePwd.value,function(msg){
+			encodeJPG(preview,array2embed,pwdArray[0],function(msg){
 				imagePwd.value = '';
 				if(msg) imageMsg.textContent = msg
 			},
-			false,iter);
+			false,iter,
+			array2embed2,pwdArray[1],iter2
+			);
 			imagePwd.value = ''
 		},10)
 	}
@@ -431,11 +460,15 @@ function encode(){
 //extract text from the image
 function decode(){	
 	imageMsg.innerHTML = '<span class="blink" style="color:cyan">PROCESSING</span>';				//Get blinking message started
+
+	var pwdArray = imagePwd.value.split('|'); 														//in case there is a hidden message and password
 	
-	var iter = smartPwdMode.checked && imagePwd.value ? keyStrength(imagePwd.value,false) : 0;
+	var iter = smartPwdMode.checked && pwdArray[0] ? keyStrength(pwdArray[0],false) : 0;
+	
+	if(pwdArray[1]) var iter2 = smartPwdMode.checked ? keyStrength(pwdArray[1],false) : 0;		//for hidden message
 	
 setTimeout(function(){
-	decodeImage(preview,imagePwd.value,function(textBin,msg){
+	decodeImage(preview,pwdArray[0],function(textBin,msg){
 		if(compressedMode.checked){
 			mainBox.innerHTML = safeHTML(LZString.decompressFromBase64(fromBin(textBin)))
 		}else{
@@ -450,7 +483,16 @@ setTimeout(function(){
 		imagePwd.value = '';
 		imageMsg.textContent = msg
 		},
-		false,iter)
+		false,iter,
+		
+		pwdArray[1],function(textBin,msg){																			//for hidden message
+		if(compressedMode.checked){
+			imageMsg.innerHTML = safeHTML(LZString.decompressFromBase64(fromBin(textBin)))
+		}else{
+			imageMsg.innerHTML = safeHTML(b64DecodeUnicode(fromBin(textBin)))											//binary output turned to base64 first, then into UTF8 text
+		}
+		},
+		iter2)
 },10)
 }
 
@@ -755,7 +797,7 @@ function reduceVariants(string){
 <div id="rightPanel" style="width: 50%; height: 100%; float: right;">
   <br>
   <br>
-  <div id="imageMsg" style="height:30px;"></div>
+  <div id="imageMsg" style="min-height:30px;"></div>
   <br>
   <br>
   <img id="preview" src="" width="100%"/>
@@ -789,6 +831,7 @@ function reduceVariants(string){
     <p>To decrypt, load the image with the big button and type in the optional Password, then click <strong>Decrypt</strong>. If successful, the encrypted message will appear in the big box.</p>
     <p>You'll be able to store more text if  you leave the <strong>Compressed</strong> check on. If you check <strong>Smart Pwd.</strong>, computations will be added for weak passwords, thus increasing overall security. The state of these checkboxes must be the same for encryption and decryption.</p>
     <p>The program will run from a saved file, so you don't have to be online in order to use it.</p>
+    <p>It is possible to add a second message, encrypted under a different password. To do this, write a vertical bar "|" after the main pasword in the password box, then the password for the second message, then another bar, and finally the second message. To decrypt, write the main password, and then a bar and the second message password. If successful, the second message will appear in the space above the image.</p>
   </div>
   <hr>
   <div id="aa3" class="helpitem">
@@ -890,6 +933,8 @@ window.onload = function() {
 	help2mainBtnTop.addEventListener('click', main2help);
 
 	help2mainBtnBottom.addEventListener('click', main2help);
+	
+	mainBox.addEventListener('paste', function(){if(preview.src.slice(0,4) == 'data') setTimeout(updateCapacity,0)});
 
 	//for the rich text editor boxes and buttons
 	formatBlock.addEventListener("change", function() {formatDoc('formatBlock',this[this.selectedIndex].value);this.selectedIndex=0;});
