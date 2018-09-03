@@ -1,0 +1,213 @@
+html {
+	-webkit-text-size-adjust: 100%;
+}
+body {
+	font-family: Sans-Serif;
+	margin-left: 1%;
+	margin-right: 1%;
+	overflow: auto;
+	background-color: #FFFFFF;
+	color: #000000;
+}
+.cssbutton {
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+	font-family: Arial;
+	font-size: 18px;
+	padding: 12px;
+	text-decoration: none;
+	border: 0px;
+	margin-right: -2px;
+	color: #666666;
+	background: #e6e6e6;
+}
+.cssbutton:hover {
+	text-decoration: none;
+	cursor: pointer;
+	background: #c4c4c4;
+}
+.cssbox {
+	-webkit-border-radius: 15px;
+	-moz-border-radius: 15px;
+	border-radius: 15px;
+	font-size: medium;
+	padding: 15px;
+	text-decoration: none;
+	width: 100%;
+	-webkit-appearance: none;
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	color: #000000;
+	background: #fffff5;
+	border: 1px solid #dedede;
+	overflow: auto;
+}
+.helpitem {
+	font-size: medium;
+	cursor: pointer;
+	padding: 1px;
+}
+.helpitem:hover {
+	background-color: #eeeeee;
+}
+.helptext {
+	font-size: medium;
+	display: none;
+}
+.blink {
+	-webkit-animation: blink .75s linear infinite;
+	-moz-animation: blink .75s linear infinite;
+	-ms-animation: blink .75s linear infinite;
+	-o-animation: blink .75s linear infinite;
+	animation: blink .75s linear infinite;
+	color: cyan;
+}
+ @-webkit-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-moz-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-ms-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @-o-keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+ @keyframes blink {
+ 0% {
+opacity: 1;
+}
+ 50% {
+opacity: 1;
+}
+ 50.01% {
+opacity: 0;
+}
+ 100% {
+opacity: 0;
+}
+}
+#toolBar1 {
+	padding-top: 1px;
+	padding-left: 2px;
+	border-top-left-radius: 15px;
+	border-top-right-radius: 15px;
+	background: #e6e6e6;
+}
+#toolBar1 select {
+	font-size: 10px;
+	width: 80px;
+	padding: 4px;
+	border-radius: 8px;
+}
+#mainBox {
+	width: 100%;
+	padding: 12px;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+[contenteditable=true]:empty:before{
+  content: attr(placeholder);
+  display: block; /* For Firefox */
+  color: #999999;
+}
+
+#mainScr {
+	display: block;
+}
+#leftPanel {
+	width: 45%;
+	height: 100%;
+	float: left;
+}
+#imageFile {
+	display: none;
+}
+#imagePwd {
+	width: 35%;
+	padding: 5px;
+}
+#imgFile {
+	display: none;
+}
+#mainFile {
+	display: none;
+}
+#rightPanel {
+	width: 50%;
+	height: 100%;
+	float: right;
+}
+#imageMsg {
+	min-height: 30px;
+}
+
+#helpScr {
+	max-width: 1200px;
+	margin-left: auto;
+	margin-right: auto;
+	display: none;
+}
+#helpHeading {
+	color: green;
+	font-size: x-large;
+}
+#help2mainBtnTop {
+	float: left;
+}
+#canary {
+	float: left;
+}
+#help2mainBtnBottom {
+	float: left;
+}
