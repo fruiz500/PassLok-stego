@@ -2,7 +2,7 @@
  "name": "PassLok Image Steganography",
  "short_name": "PassLokStego",
  "description": "The reigning champion of image steganography",
- "version": "1.0.1",
+ "version": "1.1.1",
  "manifest_version": 2,
  "icons": {
  "16": "passlok-icon16.png",
