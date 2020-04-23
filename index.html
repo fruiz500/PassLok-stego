@@ -29,7 +29,10 @@
 <script src="lib/jssteg.js"></script>
 
 <!--isaac seedable PRNG by Yves-Marie Rinquin. https://github.com/rubycon/isaac.js/blob/master/isaac.js-->
-<script src="lib/isaac.js"></script>
+<script src="lib/isaac.js" type="module"></script>
+
+<!--isaac wasm tests to make sure it functions the same as isaac js, run in console with `test();`-->
+<script src="tests/test.js"></script>
 
 <!--lz-string compression algorithm by Pieroxy. https://github.com/pieroxy/lz-string-->
 <script src="lib-extra/lz-string.js"></script>
@@ -73,6 +76,7 @@
   <input type='checkbox' id='showPwdMode' title="check this to see the Password">&nbsp;Show Pwd.&nbsp;&nbsp;
   <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing" checked>&nbsp;Compressed&nbsp;&nbsp;
   <input type='checkbox' id='smartPwdMode' title="check this to use smart Password stretching, also when revealing" checked>&nbsp;Smart Pwd.
+  <br><input type='checkbox' id='useWasm' title="check this to use WebAssembly-accelerated encryption">&nbsp;Wasm Acceleration (experimental)
   <br>
   <br>
   <!--toolbar for rich text editing; this first section contains lists for style, fonts, etc.-->
