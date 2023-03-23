@@ -51,11 +51,8 @@ To decode a hidden message out of an image:
 ### Error messages
 The process may sometimes fail due to image corruption or a bug in the js-steg libraries. For instance, JPG decoding fails on iOS because of a crash of jsstegdecoder.js at line 541. Usually there will be a message explaining what happened. If you get "The image does not contain anything, or perhaps the password is wrong", it could be either reason because the program is designed to make the encoding undetectable unless the correct Password is supplied.
 
-The WASM isaac library has been giving errors, so this and all extra code from that pull is disconnected in index.html until it is fixed. This means all code flagged as "added experimental WASM," as well as directories "bin" and "tests".
-
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
 * The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
 * Compression used in the demo program is lz-string.js by Pieroxy. Source: https://github.com/pieroxy/lz-string
-* WASM version of isaac PRNG by Girkov Arpa
 * Special thanks to Jean-Claude Rock for explaining to me how F5 works and what its flaws are

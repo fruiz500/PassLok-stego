@@ -15,7 +15,7 @@
  "permissions": [
  ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"]
   },
  "action": {
    "default_icon": {
@@ -23,5 +23,10 @@
            "48": "passlokstego-icon48gray.png"
    },
    "default_title": "PassLok Stego"
- }
+ },
+ "browser_specific_settings": {
+  "gecko": {
+    "id": "{b8d63240-9790-42f9-89a9-302338b5c002}"
+  }
+}
 }
