@@ -47,6 +47,11 @@ body {
 	border: 1px solid #dedede;
 	overflow: auto;
 }
+.field-icon {
+  margin-left: -30px;
+  height: 16px;
+  z-index: 2;
+}
 .helpitem {
 	font-size: medium;
 	cursor: pointer;
@@ -174,7 +179,7 @@ opacity: 0;
 	display: none;
 }
 #imagePwd {
-	width: 35%;
+	width: 100%;
 	padding: 5px;
 }
 #imgFile {
