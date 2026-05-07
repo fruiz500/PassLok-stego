@@ -20,7 +20,7 @@ self.FILES_TO_CACHE = [
     './lib/jsstegdecoder.js',
     './lib-extra/lz-string.js',
     './lib-extra/dictionary_en.js',
-    './lib=extra/license.js',
+    './lib-extra/license.js',
     './lib-extra/purify.js',
     './favicon.ico',
     './passlok-icon128.png'
