@@ -1,288 +1,388 @@
 <!DOCTYPE html>
-<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" manifest="passlokstego.appcache">
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>PassLok Image Steganography</title>
-<meta name="Keywords" content="steganography, F5, passlok, URSA, browser, encryption, decryption, symmetric, public key, signature, AES, ECDH, Diffie, Hellman, elliptic curve, advanced, javascript, PGP, PRISM">
-<meta name="Description" content="PassLok Image Steganography">
-<meta name="author" content="F. Ruiz">
-<meta name="robots" content="index">
-<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="apple-touch-icon" href="passlok-touch-icon.png">
-<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>PassLok Image Steganography</title>
+  <meta name="Keywords"
+    content="steganography, F5, passlok, URSA, browser, encryption, decryption, symmetric, public key, signature, AES, ECDH, Diffie, Hellman, elliptic curve, advanced, javascript, PGP, PRISM">
+  <meta name="Description" content="PassLok Image Steganography">
+  <meta name="author" content="F. Ruiz">
+  <meta name="robots" content="index">
+  <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="apple-touch-icon" href="passlok-touch-icon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
 
-<!--Default stylesheet containing the Light color scheme-->
-<link rel="stylesheet" href="style.css">
+  <!--Default stylesheet containing the Light color scheme-->
+  <link rel="stylesheet" href="style.css">
 
-<!--License notice and SSL force-->
-<script src="lib-extra/license.js"></script>
+  <!--License notice and SSL force-->
+  <script src="lib-extra/license.js"></script>
 
-<!--jpeg image steganography by Owen Campbell-Moore and others. https://github.com/owencm/js-steg. First jsstegencoder-1.0.js-->
-<script src="lib/jsstegencoder.js"></script>
+  <!--jpeg image steganography by Owen Campbell-Moore and others. https://github.com/owencm/js-steg. First jsstegencoder-1.0.js-->
+  <script src="lib/jsstegencoder.js"></script>
 
-<!--jsstegdecoder-1.0.js. Edits to display warning on error or skip over certain errors-->
-<script src="lib/jsstegdecoder.js"></script>
+  <!--jsstegdecoder-1.0.js. Edits to display warning on error or skip over certain errors-->
+  <script src="lib/jsstegdecoder.js"></script>
 
-<!--jssteg-1.0.js. Also some edits for error handling-->
-<script src="lib/jssteg.js"></script>
+  <!--jssteg-1.0.js. Also some edits for error handling-->
+  <script src="lib/jssteg.js"></script>
 
-<!--seedable PRNG provided by Claude AI-->
-<script src="lib/prng.js"></script>
+  <!--scrypt-async 2.0.1 by Dmitry Chestnykh. https://github.com/dchest/scrypt-async-js-->
+  <script src="lib/scrypt-async.js"></script>
 
-<!--lz-string compression algorithm by Pieroxy. https://github.com/pieroxy/lz-string-->
-<script src="lib-extra/lz-string.js"></script>
+  <!--xoshiro128 PRNG from Gemini-->
+  <script src="lib/prng.js"></script>
 
-<!--DOMPurify, used to sanitize decrypted material before putting in DOM v3.0.1. https://github.com/cure53/DOMPurify-->
-<script src="lib-extra/purify.js"></script>
+  <!--lz-string compression algorithm by Pieroxy. https://github.com/pieroxy/lz-string-->
+  <script src="lib-extra/lz-string.js"></script>
 
-<!--ORIGINAL PassLok-stego CODE, largely based on F5 by A. Westfeld 2001-->
-<script src="lib/plstego.js"></script>
+  <!--DOMPurify, used to sanitize decrypted material before putting in DOM v3.0.1. https://github.com/cure53/DOMPurify-->
+  <script src="lib-extra/purify.js"></script>
 
-<!--this only loads two regular expressions: blackListExp and wordListExp, plus their lengths-->
-<script src="lib-extra/dictionary_en.js"></script>
+  <!--ORIGINAL PassLok-stego CODE, largely based on F5 by A. Westfeld 2001-->
+  <script src="lib/plstego.js"></script>
 
-<!--code specific to this HTML document-->
-<script src="lib/main.js"></script>
+  <!--this only loads two regular expressions: blackListExp and wordListExp, plus their lengths-->
+  <script src="lib-extra/dictionary_en.js"></script>
+
+  <!--code specific to this HTML document-->
+  <script src="lib/main.js"></script>
 
 </head>
 
 <body>
 
-<!--Main screen, consisting of two panels side by side-->
-<div id="mainScr">
-<div id="leftPanel">
-<h3>PassLok Image Steganography</h3><p>&copy; F. Ruiz 2025</p>
-&nbsp;
-  <button class="cssbutton" id="encodePNGBtn" value="PNG Hide" title="hide box contents into PNG image (alt-P)" accesskey="p">Hide into PNG</button>
-  &nbsp;
-  <button class="cssbutton" id="encodeJPGBtn" value="JPG Hide" title="hide box contents into JPG image (alt-J)" accesskey="j">Hide into JPG</button>
-  &nbsp;
-  <button class="cssbutton" id="decodeBtn" value="Reveal" title="reveal content hidden in the image and put it in the box (alt-R)" accesskey="r">Reveal</button>
-  &nbsp;
-  <button class="cssbutton" id="clearBtn" value="Clear" title="clear box (alt-C)" accesskey="c">Clear</button>
-  &nbsp;
-  <button class="cssbutton" id="helpBtn" value="Help" title="get help on this program (alt-H)" accesskey="h">Help</button>
-  <br>
-  <br>
+  <!--Main screen, consisting of two panels side by side-->
+  <div id="mainScr">
+    <div id="leftPanel">
+      <h3>PassLok Image Steganography</h3>
+      <p>&copy; F. Ruiz 2026</p>
+      &nbsp;
+      <button class="cssbutton" id="encodePNGBtn" value="PNG Hide" title="hide box contents into PNG image (alt-P)"
+        accesskey="p">Hide into PNG</button>
+      &nbsp;
+      <button class="cssbutton" id="encodeJPGBtn" value="JPG Hide" title="hide box contents into JPG image (alt-J)"
+        accesskey="j">Hide into JPG</button>
+      &nbsp;
+      <button class="cssbutton" id="decodeBtn" value="Reveal"
+        title="reveal content hidden in the image and put it in the box (alt-R)" accesskey="r">Reveal</button>
+      &nbsp;
+      <button class="cssbutton" id="clearBtn" value="Clear" title="clear box (alt-C)" accesskey="c">Clear</button>
+      &nbsp;
+      <button class="cssbutton" id="helpBtn" value="Help" title="get help on this program (alt-H)"
+        accesskey="h">Help</button>
+      <br>
+      <br>
 
-<table>
-    <tr>
-      <td width="33%">
-<label for="imageFile" title="open dialog to select the cover image (alt-L)" accesskey="l"><span class="cssbutton">Load cover image</span></label>
-  <input type='file' id='imageFile'/>
-      </td>
-    <td width="100%">
-    <input type="password" class="cssbox left" id="imagePwd" title="use password for better undetectability" placeholder="optional Password"/>
-    </td>
-    <td width="0%">
-    <img id='showKey' class="field-icon" src="" title="click this to see/hide the Key">
-    </td>
-    </tr>
-    </table>
-  <br>
-  <br>&nbsp;&nbsp;
-  <!--input type='checkbox' id='showPwdMode' title="check this to see the Password">&nbsp;Show Pwd.&nbsp;&nbsp;-->
-  <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing" checked>&nbsp;Compressed&nbsp;&nbsp;
-  <input type='checkbox' id='smartPwdMode' title="check this to use smart Password stretching, also when revealing">&nbsp;Smart Pwd.
-  <br>
-  <br>
-  <!--toolbar for rich text editing; this first section contains lists for style, fonts, etc.-->
-  <div id="toolBar1">
-    <select id="formatBlock" title="headings, etc.">
-      <option selected>- formatting -</option>
-      <option value="h1">Title 1 &lt;h1&gt;</option>
-      <option value="h2">Title 2 &lt;h2&gt;</option>
-      <option value="h3">Title 3 &lt;h3&gt;</option>
-      <option value="h4">Title 4 &lt;h4&gt;</option>
-      <option value="h5">Title 5 &lt;h5&gt;</option>
-      <option value="h6">Subtitle &lt;h6&gt;</option>
-      <option value="p">Paragraph &lt;p&gt;</option>
-      <option value="pre">Preformatted &lt;pre&gt;</option>
-    </select>
-    <select id="fontName" title="font type">
-      <option class="heading" selected>- font -</option>
-      <option>Arial</option>
-      <option>Arial Black</option>
-      <option>Courier New</option>
-      <option>Times New Roman</option>
-      <option>Verdana</option>
-      <option>Comic Sans MS</option>
-      <option>Impact</option>
-      <option>Trebuchet MS</option>
-      <option>Symbol</option>
-    </select>
-    <select id="fontSize" title="font size">
-      <option class="heading" selected>- size -</option>
-      <option value="1">Very small</option>
-      <option value="2">A bit small</option>
-      <option value="3">Normal</option>
-      <option value="4">Medium-large</option>
-      <option value="5">Big</option>
-      <option value="6">Very big</option>
-      <option value="7">Maximum</option>
-    </select>
-    <select id="foreColor" title="text color">
-      <option class="heading" selected>- color -</option>
-      <option value="brown">Brown</option>
-      <option value="red">Red</option>
-      <option value="orange">Orange</option>
-      <option value="green">Green</option>
-      <option value="blue">Blue</option>
-      <option value="purple">Violet</option>
-      <option value="violet">Pink</option>
-      <option value="yellow">Yellow</option>
-      <option value="cyan">Cyan</option>
-      <option value="white">White</option>
-      <option value="gray">Gray</option>
-      <option value="black">Black</option>
-    </select>
-    <select id="backColor" title="color behind the text">
-      <option class="heading" selected>- back color -</option>
-      <option value="brown">Brown</option>
-      <option value="red">Red</option>
-      <option value="orange">Orange</option>
-      <option value="green">Green</option>
-      <option value="blue">Blue</option>
-      <option value="purple">Violet</option>
-      <option value="violet">Pink</option>
-      <option value="yellow">Yellow</option>
-      <option value="cyan">Cyan</option>
-      <option value="white">White</option>
-      <option value="gray">Gray</option>
-      <option value="black">Black</option>
-    </select>
+      <table>
+        <tr>
+          <td width="33%">
+            <label for="imageFile" title="open dialog to select the cover image (alt-L)" accesskey="l"><span
+                class="cssbutton">Load cover image</span></label>
+            <input type='file' id='imageFile' />
+          </td>
+          <td width="100%">
+            <input type="password" class="cssbox left" id="imagePwd" title="use password for better undetectability"
+              placeholder="optional Password" />
+          </td>
+          <td width="0%">
+            <img id='showKey' class="field-icon" src="" title="click this to see/hide the Key">
+          </td>
+        </tr>
+      </table>
+      <br>
+      <br>&nbsp;&nbsp;
+      <input type='checkbox' id='compressedMode' title="check this to use compression, also when revealing"
+        checked>&nbsp;Compressed&nbsp;&nbsp;
+      <input type='checkbox' id='smartPwdMode'
+        title="check this to use smart Password stretching, also when revealing">&nbsp;Smart Pwd.&nbsp;&nbsp;
+      <input type='checkbox' id='pbCompatible' title="force Privacy Bar compatibility (scrypt + LZString)">&nbsp;PB
+      Compatible
+      <br>
+      <br>
+      <!--toolbar for rich text editing; this first section contains lists for style, fonts, etc.-->
+      <div id="toolBar1">
+        <select id="formatBlock" title="headings, etc.">
+          <option selected>- formatting -</option>
+          <option value="h1">Title 1 &lt;h1&gt;</option>
+          <option value="h2">Title 2 &lt;h2&gt;</option>
+          <option value="h3">Title 3 &lt;h3&gt;</option>
+          <option value="h4">Title 4 &lt;h4&gt;</option>
+          <option value="h5">Title 5 &lt;h5&gt;</option>
+          <option value="h6">Subtitle &lt;h6&gt;</option>
+          <option value="p">Paragraph &lt;p&gt;</option>
+          <option value="pre">Preformatted &lt;pre&gt;</option>
+        </select>
+        <select id="fontName" title="font type">
+          <option class="heading" selected>- font -</option>
+          <option>Arial</option>
+          <option>Arial Black</option>
+          <option>Courier New</option>
+          <option>Times New Roman</option>
+          <option>Verdana</option>
+          <option>Comic Sans MS</option>
+          <option>Impact</option>
+          <option>Trebuchet MS</option>
+          <option>Symbol</option>
+        </select>
+        <select id="fontSize" title="font size">
+          <option class="heading" selected>- size -</option>
+          <option value="1">Very small</option>
+          <option value="2">A bit small</option>
+          <option value="3">Normal</option>
+          <option value="4">Medium-large</option>
+          <option value="5">Big</option>
+          <option value="6">Very big</option>
+          <option value="7">Maximum</option>
+        </select>
+        <select id="foreColor" title="text color">
+          <option class="heading" selected>- color -</option>
+          <option value="brown">Brown</option>
+          <option value="red">Red</option>
+          <option value="orange">Orange</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="purple">Violet</option>
+          <option value="violet">Pink</option>
+          <option value="yellow">Yellow</option>
+          <option value="cyan">Cyan</option>
+          <option value="white">White</option>
+          <option value="gray">Gray</option>
+          <option value="black">Black</option>
+        </select>
+        <select id="backColor" title="color behind the text">
+          <option class="heading" selected>- back color -</option>
+          <option value="brown">Brown</option>
+          <option value="red">Red</option>
+          <option value="orange">Orange</option>
+          <option value="green">Green</option>
+          <option value="blue">Blue</option>
+          <option value="purple">Violet</option>
+          <option value="violet">Pink</option>
+          <option value="yellow">Yellow</option>
+          <option value="cyan">Cyan</option>
+          <option value="white">White</option>
+          <option value="gray">Gray</option>
+          <option value="black">Black</option>
+        </select>
 
-    <!--rich text editing buttons; images are loaded as data-->
-    <div id="toolBar2"> <img class="intLink" title="Bold" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=" /> <img class="intLink" title="Italic" src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==" /> <img class="intLink" title="Underline" src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7" /> <img class="intLink" title="Strikethrough" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAABGRkZxcXGrq6uOjo7CwsINDQ3p6emLJhauAAAAAXRSTlMAQObYZgAAAEVJREFUGNNjoCYoDjaBs1UZDGFMVmUGJhibXcidFa7GUVAVygpSUlJMS0uBqmFgFhSA6TVgYIOxmcUZ2BxgbEFnF2o6HQD3yAWvJ+vXvwAAAABJRU5ErkJggg==" /> <img class="intLink" title="Subscript" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEh0pePr7/WgssrS0tLH1vP156UFAAAAAXRSTlMAQObYZgAAAElJREFUGNNjoB5gDBQRFICy2YQCAhNgEomqAghFSg5wNosSkniQGktwAURYlFEp2d0AIiyYpKTGbICwJBihnd2kBM5mNjagzPEAztoHvc+7u1sAAAAASUVORK5CYII=" /> <img class="intLink" title="Superscript" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEigssrr7/V0pePS0tLH1vPtoVcWAAAAAXRSTlMAQObYZgAAAEpJREFUGNNjoC5gCTaAs5ndAxASrBA2o6GIoICpA5jNJmhg6B5SApFPUhZgDQ2AalRyQBioJABnMxqpwYWFGZUMYMKCSUpqlDocAJ7SBzNIUMnCAAAAAElFTkSuQmCC" /> <img class="intLink" title="Left align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JMGELkGYxo+qzl4nKyXAAAOw==" /> <img class="intLink" title="Center align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIfhI+py+0Po5y02ouz3jL4D4JOGI7kaZ5Bqn4sycVbAQA7" /> <img class="intLink" title="Right align" src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JQGDLkGYxouqzl43JyVgAAOw==" /> <img class="intLink" title="Justify" src="data:image/gif;base64,R0lGODlhFgAWAIAAAMDAwAAAACH5BAEAAAAALAAAAAAWABYAAAIghI+py+0Po2yh2nvnxNxq2XVfFHIjVGLnk2brC8fyXAAAOw==" /> <img class="intLink" title="Numbered list" src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAADljwliE35GjuaezxtHa7P///////yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKSespwjoRFvggCBUBoTFBeq6QIAysQnRHaEOzyaZ07Lu9lUBnC0UGQU1K52s6n5oEADs=" /> <img class="intLink" title="Dotted list" src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAAB1ChF9vj1iE33mOrqezxv///////yH5BAEAAAcALAAAAAAWABYAAAMyeLrc/jDKSesppNhGRlBAKIZRERBbqm6YtnbfMY7lud64UwiuKnigGQliQuWOyKQykgAAOw==" /> <img class="intLink" title="Quote" src="data:image/gif;base64,R0lGODlhFgAWAIQXAC1NqjFRjkBgmT9nqUJnsk9xrFJ7u2R9qmKBt1iGzHmOrm6Sz4OXw3Odz4Cl2ZSnw6KxyqO306K63bG70bTB0rDI3bvI4P///////////////////////////////////yH5BAEKAB8ALAAAAAAWABYAAAVP4CeOZGmeaKqubEs2CekkErvEI1zZuOgYFlakECEZFi0GgTGKEBATFmJAVXweVOoKEQgABB9IQDCmrLpjETrQQlhHjINrTq/b7/i8fp8PAQA7" /> <img class="intLink" title="Delete indentation" src="data:image/gif;base64,R0lGODlhFgAWAMIHAAAAADljwliE35GjuaezxtDV3NHa7P///yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKCQG9F2i7u8agQgyK1z2EIBil+TWqEMxhMczsYVJ3e4ahk+sFnAgtxSQDqWw6n5cEADs=" /> <img class="intLink" title="Add indentation" src="data:image/gif;base64,R0lGODlhFgAWAOMIAAAAADljwl9vj1iE35GjuaezxtDV3NHa7P///////////////////////////////yH5BAEAAAgALAAAAAAWABYAAAQ7EMlJq704650B/x8gemMpgugwHJNZXodKsO5oqUOgo5KhBwWESyMQsCRDHu9VOyk5TM9zSpFSr9gsJwIAOw==" /> <img class="intLink" title="Horizontal rule" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAADIyMimpqbp6enz8/P8/PzZ2dldXV27aT9/AAAAAXRSTlMAQObYZgAAAD5JREFUGNNjoBg4GSDYSgpYFCQKgkECiC0aGuLi7GwsAGILKYGBABYt5QUwVoiZuJhJAITN6mxs7Apk0wIAACMpB/oWEo0pAAAAAElFTkSuQmCC" /> <img class="intLink" title="Hyperlink" src="data:image/gif;base64,R0lGODlhFgAWAOMKAB1ChDRLY19vj3mOrpGjuaezxrCztb/I19Ha7Pv8/f///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARY8MlJq7046827/2BYIQVhHg9pEgVGIklyDEUBy/RlE4FQF4dCj2AQXAiJQDCWQCAEBwIioEMQBgSAFhDAGghGi9XgHAhMNoSZgJkJei33UESv2+/4vD4TAQA7" /> <img class="intLink" title="Remove hyperlink" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAAD08fHXzcxjY2OMhoafn5+uLyrktrTVXxhsAAAAAXRSTlMAQObYZgAAAGxJREFUGNNjwAAFMAZjEkMCYyKUU6aQoAaTYU90TIcrFwBCCFANDWIKDVUAMZkcBUVZBQWDQGwWERcnJhcXETBbBUEyKzubsjobK4PYrEZCwsxCQqZgc4KNTVmMjQOQzIfbW5jOgOYehDspAwBt9Q/S3exo3wAAAABJRU5ErkJggg==" /> <img class="intLink" title="Remove formatting" src="data:image/gif;base64,R0lGODlhFgAWAIQbAD04KTRLYzFRjlldZl9vj1dusY14WYODhpWIbbSVFY6O7IOXw5qbms+wUbCztca0ccS4kdDQjdTLtMrL1O3YitHa7OPcsd/f4PfvrvDv8Pv5xv///////////////////yH5BAEKAB8ALAAAAAAWABYAAAV84CeOZGmeaKqubMteyzK547QoBcFWTm/jgsHq4rhMLoxFIehQQSAWR+Z4IAyaJ0kEgtFoLIzLwRE4oCQWrxoTOTAIhMCZ0tVgMBQKZHAYyFEWEV14eQ8IflhnEHmFDQkAiSkQCI2PDC4QBg+OAJc0ewadNCOgo6anqKkoIQA7" /> <img class="intLink" title="Undo" src="data:image/gif;base64,R0lGODlhFgAWAOMKADljwliE33mOrpGjuYKl8aezxqPD+7/I19DV3NHa7P///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARR8MlJq7046807TkaYeJJBnES4EeUJvIGapWYAC0CsocQ7SDlWJkAkCA6ToMYWIARGQF3mRQVIEjkkSVLIbSfEwhdRIH4fh/DZMICe3/C4nBQBADs=" /> <img class="intLink" title="Redo" src="data:image/gif;base64,R0lGODlhFgAWAMIHAB1ChDljwl9vj1iE34Kl8aPD+7/I1////yH5BAEKAAcALAAAAAAWABYAAANKeLrc/jDKSesyphi7SiEgsVXZEATDICqBVJjpqWZt9NaEDNbQK1wCQsxlYnxMAImhyDoFAElJasRRvAZVRqqQXUy7Cgx4TC6bswkAOw==" />
-<label for="imgFile">
-<img class="intLink" title="Insert image" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAbFBMVEUAAAAAAAAmJibm5uaJiYnZ2dnn5+e5ubmBgYHNzc3z8/Pr6+vW1ta2trZ/f3/y8vLQ0NDPz8/Dw8OgoKCOjo54eHgcHBwGBgb+/v7T09PIyMi+vr6srKyEhIRqampiYmJbW1tPT08qKioRERGLOctyAAAAAXRSTlMAQObYZgAAAHJJREFUGNOtzkkShCAQRNFKbLsVsZ3nWe9/R8EAYeHSv6u3qEh6qo0/TkUiKULNbCglfZGSjf0vCvWZLTmxwBBXVGG1NO2D+hoIQ6IHmrKrciJDfgxIBGbPId12E//pUjOiyHydCGtFyQG3kWTcc4ro1U7vPAUU4TAxJQAAAABJRU5ErkJggg==" />
-</label>
-<input type="file" id="imgFile" />
-<label for="mainFile">
-<img class="intLink" title="Load a file" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAATlBMVEUAAAAAAAD19fVcXFwbGxsTExP8/PzT09NxcXFaWlo4ODg1NTUEBAT5+fnw8PDr6+vU1NTIyMi+vr6Xl5dsbGxnZ2dXV1dISEghISEMDAw0f0rSAAAAAXRSTlMAQObYZgAAAFBJREFUGNO9yEkOgCAQBMBmUxDc9/9/VJ2EjgkHb9axcJuceqQRtMq4aAdWkDr6xtW5jJRFx2MBu23fdS7eG6Vz0U8VytrKmhMnVoDQlOfbBQLIAl4FF2fyAAAAAElFTkSuQmCC" />
-</label>
-<input type="file" id="mainFile" />
-</div>
-  </div>
-  <div id="mainBox" contenteditable="true" class="cssbox" placeholder="1 Type what you want to hide here; you can also insert images and files. 2 Load a cover image with the button. 3 Click either Hide into PNG or Hide into JPG. For best results, use a Password and keep Compressed and Smart Pwd. checked. To reveal the hidden content, load the image, type the Password, set the options, and click Reveal."></div>
-</div>
-<div id="rightPanel">
-  <br>
-  <br>
-  <div id="imageMsg"></div>
-  <br>
-  <br>
-  <img id="preview" src="" width="100%"/>
-</div>
-</div>
-
-<!--Help screen-->
-<div id="helpScr">
-  <h2 id="helpHeading">Welcome to PassLok Image Steganography</h2>
-  <button class="cssbutton" id="help2mainBtnTop" value="&lt; Back" title="return to main screen (alt-M)" accesskey='m'>&#9668; Back</button>
-  <br />
-  &nbsp;&nbsp;&nbsp;<span id='helpmsg'>For help on how to do things, click on each title.</span><br>
-  <br>
-  <hr>
-  <div id="aa1" class="helpitem">
-    <h3>What is PassLok Image Steganography?</h3>
-  </div>
-  <div id="a1" class="helptext">
-    <p>PassLok Image Steganography encrypts text, images, and files, and hides them inside the data of jpeg or png images. If you supply a Password, it becomes extremely difficult even to detect that there is anything contained in that image. Only those possessing the same Password can retrieve the contents.</p>
-    <p>This program uses the image hiding functions of PassLok Privacy and PassLok for Email (both available from <a href="https://passlok.com" target="_blank">https://passlok.com</a>) but is a standalone encryption program on its own right. Its output is not compatible with those programs because the encryption engine is different.</p>
-    <p>PassLok Image Steganography runs on a browser and is platform-independent. It has difficulty running on iOS, however, because of bugs in the jpeg-encoding libraries.</p>
-    <p>Ths program is <em>still in experimental phase</em>, as it has not yet been duly vetted by experts. Bear this in mind before entrusting sensitive information to it.</p>
-    <p>If you want more capability, you may want to try the full PassLok Privacy, from <a href="https://passlok.com/app" target="_blank">https://passlok.com/app</a>, which is capable of asymmetric encryption (you don't give your Password to anyone) plus signatures and secret splitting. There is also PassLok for Email, available for <a href="https://chrome.google.com/webstore/detail/passlok-for-email/ehakihemolfjgbbfhkbjgahppbhecclh" target="_blank">Chrome</a> and <a href="https://addons.mozilla.org/en-US/firefox/addon/passlok-for-email/" target="_blank">Firefox</a>, which integrates with popular webmail services.</p>
-  </div>
-  <hr>
-  <div id="aa2" class="helpitem">
-    <h3>How do I use the program?</h3>
-  </div>
-  <div id="a2" class="helptext">
-    <p>To hide text or data, just type what you want to hide in the big box (you can also load images and files with the buttons on the right side of the toolbar), and the Password in the top box (optional but highly recommended), load a cover image with the big button, and click either <strong>Hide into PNG</strong> or <strong>Hide into JPG</strong>. The original format of the image does not matter. Save the resulting message-containing image, which will still look very much like the original, by right-clicking on it and choosing <strong>Save Image As...</strong></p>
-    <p>To reveal the hidden contents, load the image with the big button and type in the optional Password, then click <strong>Reveal</strong>. If successful, the hidden message or data will appear in the big box.</p>
-    <p>You'll be able to store more text if  you leave the <strong>Compressed</strong> check on. If you check <strong>Smart Pwd.</strong>, computations will be added for weak passwords, thus increasing overall security. The state of these checkboxes must be the same for encryption and decryption.</p>
-    <p>The program will run from a saved file, so you don't have to be online in order to use it.</p>
-    <p>It is possible to add a second message, encrypted under a different password. To do this, write a vertical bar "|" after the main pasword in the password box, then the password for the second message, then another bar, and finally the second message. To reveal it, write the main password, and then a bar and the second message password. If successful, the second message will appear in the space above the image.</p>
-  </div>
-  <hr>
-  <div id="aa3" class="helpitem">
-    <h3>Can I encrypt files and images?</h3>
-  </div>
-  <div id="a3" class="helptext">
-    <p>You have two choices:</p>
-    <p>1. Encrypt the files using AES with a utility such as <a href="http://www.7-zip.org/" target="_blank">7-zip</a> (Windows), <a href="http://www.kekaosx.com/" target="_blank">Keka</a> (OSX), or p7zip (Linux), then encrypt the encryption password into an image, and attach both image and encrypted archive to your email.</p>
-    <p>2. You can also load files using the button at the right end of the formatting toolbar, which will load each file as a link, and then encrypt them as a regular message. If the file loaded is text, it will load as text rather than as a link. After decryption, the recipient can save each file by right-clicking it and selecting "Save Link as..."</p>
-    <p>Images can be loaded as described above or directly as image, by clicking the image icon on the rich text toolbar, and are hidden just like text.  </p>
-  </div>
-  <hr>
-  <div id="aa4" class="helpitem">
-    <h3>Keyboard shortcuts</h3>
-  </div>
-  <div id="a4" class="helptext">
-    <p>The main functions can be accessed directly from the keyboard. The button tooltips tell you what the shortcut is for each button that has a shortcut, but below is a list just in case:</p>
-    <ul>
-      <p>Alt-P: Hide into <strong>P</strong>NG</p>
-      <p>Alt-J: Hide into <strong>J</strong>PG</p>
-      <p>Alt-R: <strong>R</strong>eveal</p>
-      <p>Alt-C: <strong>C</strong>lear</p>
-      <p>Alt-H: <strong>H</strong>elp and back    </p>
-    </ul>
-  </div>
-  <hr>
-  <div id="aa5" class="helpitem">
-    <h3>Privacy Statement and Warrant Canary</h3>
-  </div>
-  <div id="a5" class="helptext">
-    <p>PassLok Image Steganography  is a self-contained piece of code that does not rely on servers to do its job. Therefore:</p>
-    <p><strong>1. We cannot give your Password to anyone</strong> (not even yourself) because we don't have it.</p>
-    <p><strong>2. We cannot give your private data to anyone</strong> because the app does not send anything out of your device, either. When you download the app from the web server, you get only the code, without any cookies, plugins, or anything of that sort.</p>
-    <p><strong>4. We will never weaken the cryptography methods contained within the program at the request of a third party, private or public.</strong> This also means no backdoors will ever be added. We would rather shut down the project than be forced to do this, which would betray the very essence of our efforts. If we learn that a counterfeit version of the program is circulating, whether placed by hackers or government agencies, we will make the fact known to users.</p>
-    <p><strong>Notice:</strong> Since this program is distributed as a piece of human-readable code, we consider it an expression of free speech protected by the laws of many countries. Putting into circulation tampered versions of the program, whether by individuals or public entities, violates free speech and copyright protection laws.</p>
-    <p>PassLok Image Steganography contains strong cryptographic methods, which may be illegal to use in some countries. Please check the local laws before using it.</p>
-    <div id="canary"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8BAMAAADI0sRBAAAAGFBMVEUAAAAAAAD///91XhdgYGCcnJzMzMzUqipkv+fEAAAAAXRSTlMAQObYZgAAAYFJREFUOMt1lLGOgzAQREEUaVkHkhpEUkOVmvsDIt31IF1PdP8vnWwzHtaGKRDmsbO7eHGm9Cfyys4km/ojmEvQ/ZBS10N6Gl+I18/v6G/KtCrTOnVuscbWSwsxPYPBwEsGw1nxgEGpxoUzuI00MjuDqWdwvyD4e88nuOdbMFOge3j79V3liHAjL7np4kt4u5V2fwS8bGbbHd3hjZ0wyt1hZAzuxL3FZoffqrUSlaG4qqU2HFbMfoplj68pNqr0T4xF4SFUMyJcY+EqxVgTS4QlwkZjrAXSubFRsw4H5p5BxLlIgwfTIW6DoXafPcYkqN74zRf3uN7bf2HHChvnuMGX7WoRYD8tTN/4q2CS/YQ8tvY79GwsXjO3J6jq/Qz7Mds8ds5RSDypAmz4zSr1E/EfQ9MJHjDd5PSGu1Vt8Q3BOBrVDuNdnj0DB2RCvH0xPpnYHoLhXmluXdajU7E7ONOj+YyP5Fzx9MDHQHIkQGCv1WtcaFqSkKeUumjnVB80TP0D1fGXaRHBg/YAAAAASUVORK5CYII=">
-    <p>This paragraph and the canary logo above attest to the fact that, up until the release of version 1.1 (November 2025) we have not received any requests under gag order for user data or modifications of the code. This paragraph will be periodically updated as this situation continues.</p>
+        <!--rich text editing buttons; images are loaded as data-->
+        <div id="toolBar2"> <img class="intLink" title="Bold"
+            src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAInhI+pa+H9mJy0LhdgtrxzDG5WGFVk6aXqyk6Y9kXvKKNuLbb6zgMFADs=" />
+          <img class="intLink" title="Italic"
+            src="data:image/gif;base64,R0lGODlhFgAWAKEDAAAAAF9vj5WIbf///yH5BAEAAAMALAAAAAAWABYAAAIjnI+py+0Po5x0gXvruEKHrF2BB1YiCWgbMFIYpsbyTNd2UwAAOw==" />
+          <img class="intLink" title="Underline"
+            src="data:image/gif;base64,R0lGODlhFgAWAKECAAAAAF9vj////////yH5BAEAAAIALAAAAAAWABYAAAIrlI+py+0Po5zUgAsEzvEeL4Ea15EiJJ5PSqJmuwKBEKgxVuXWtun+DwxCCgA7" />
+          <img class="intLink" title="Strikethrough"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAABGRkZxcXGrq6uOjo7CwsINDQ3p6emLJhauAAAAAXRSTlMAQObYZgAAAEVJREFUGNNjoCYoDjaBs1UZDGFMVmUGJhibXcidFa7GUVAVygpSUlJMS0uBqmFgFhSA6TVgYIOxmcUZ2BxgbEFnF2o6HQD3yAWvJ+vXvwAAAABJRU5ErkJggg==" />
+          <img class="intLink" title="Subscript"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEh0pePr7/WgssrS0tLH1vP156UFAAAAAXRSTlMAQObYZgAAAElJREFUGNNjoB5gDBQRFICy2YQCAhNgEomqAghFSg5wNosSkniQGktwAURYlFEp2d0AIiyYpKTGbICwJBihnd2kBM5mNjagzPEAztoHvc+7u1sAAAAASUVORK5CYII=" />
+          <img class="intLink" title="Superscript"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAACCgoJISEigssrr7/V0pePS0tLH1vPtoVcWAAAAAXRSTlMAQObYZgAAAEpJREFUGNNjoC5gCTaAs5ndAxASrBA2o6GIoICpA5jNJmhg6B5SApFPUhZgDQ2AalRyQBioJABnMxqpwYWFGZUMYMKCSUpqlDocAJ7SBzNIUMnCAAAAAElFTkSuQmCC" />
+          <img class="intLink" title="Left align"
+            src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JMGELkGYxo+qzl4nKyXAAAOw==" />
+          <img class="intLink" title="Center align"
+            src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIfhI+py+0Po5y02ouz3jL4D4JOGI7kaZ5Bqn4sycVbAQA7" />
+          <img class="intLink" title="Right align"
+            src="data:image/gif;base64,R0lGODlhFgAWAID/AMDAwAAAACH5BAEAAAAALAAAAAAWABYAQAIghI+py+0Po5y02ouz3jL4D4JQGDLkGYxouqzl43JyVgAAOw==" />
+          <img class="intLink" title="Justify"
+            src="data:image/gif;base64,R0lGODlhFgAWAIAAAMDAwAAAACH5BAEAAAAALAAAAAAWABYAAAIghI+py+0Po2yh2nvnxNxq2XVfFHIjVGLnk2brC8fyXAAAOw==" />
+          <img class="intLink" title="Numbered list"
+            src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAADljwliE35GjuaezxtHa7P///////yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKSespwjoRFvggCBUBoTFBeq6QIAysQnRHaEOzyaZ07Lu9lUBnC0UGQU1K52s6n5oEADs=" />
+          <img class="intLink" title="Dotted list"
+            src="data:image/gif;base64,R0lGODlhFgAWAMIGAAAAAB1ChF9vj1iE33mOrqezxv///////yH5BAEAAAcALAAAAAAWABYAAAMyeLrc/jDKSesppNhGRlBAKIZRERBbqm6YtnbfMY7lud64UwiuKnigGQliQuWOyKQykgAAOw==" />
+          <img class="intLink" title="Quote"
+            src="data:image/gif;base64,R0lGODlhFgAWAIQXAC1NqjFRjkBgmT9nqUJnsk9xrFJ7u2R9qmKBt1iGzHmOrm6Sz4OXw3Odz4Cl2ZSnw6KxyqO306K63bG70bTB0rDI3bvI4P///////////////////////////////////yH5BAEKAB8ALAAAAAAWABYAAAVP4CeOZGmeaKqubEs2CekkErvEI1zZuOgYFlakECEZFi0GgTGKEBATFmJAVXweVOoKEQgABB9IQDCmrLpjETrQQlhHjINrTq/b7/i8fp8PAQA7" />
+          <img class="intLink" title="Delete indentation"
+            src="data:image/gif;base64,R0lGODlhFgAWAMIHAAAAADljwliE35GjuaezxtDV3NHa7P///yH5BAEAAAcALAAAAAAWABYAAAM2eLrc/jDKCQG9F2i7u8agQgyK1z2EIBil+TWqEMxhMczsYVJ3e4ahk+sFnAgtxSQDqWw6n5cEADs=" />
+          <img class="intLink" title="Add indentation"
+            src="data:image/gif;base64,R0lGODlhFgAWAOMIAAAAADljwl9vj1iE35GjuaezxtDV3NHa7P///////////////////////////////yH5BAEAAAgALAAAAAAWABYAAAQ7EMlJq704650B/x8gemMpgugwHJNZXodKsO5oqUOgo5KhBwWESyMQsCRDHu9VOyk5TM9zSpFSr9gsJwIAOw==" />
+          <img class="intLink" title="Horizontal rule"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAADIyMimpqbp6enz8/P8/PzZ2dldXV27aT9/AAAAAXRSTlMAQObYZgAAAD5JREFUGNNjoBg4GSDYSgpYFCQKgkECiC0aGuLi7GwsAGILKYGBABYt5QUwVoiZuJhJAITN6mxs7Apk0wIAACMpB/oWEo0pAAAAAElFTkSuQmCC" />
+          <img class="intLink" title="Hyperlink"
+            src="data:image/gif;base64,R0lGODlhFgAWAOMKAB1ChDRLY19vj3mOrpGjuaezxrCztb/I19Ha7Pv8/f///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARY8MlJq7046827/2BYIQVhHg9pEgVGIklyDEUBy/RlE4FQF4dCj2AQXAiJQDCWQCAEBwIioEMQBgSAFhDAGghGi9XgHAhMNoSZgJkJei33UESv2+/4vD4TAQA7" />
+          <img class="intLink" title="Remove hyperlink"
+            src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWBAMAAAA2mnEIAAAAGFBMVEUAAAD08fHXzcxjY2OMhoafn5+uLyrktrTVXxhsAAAAAXRSTlMAQObYZgAAAGxJREFUGNNjwAAFMAZjEkMCYyKUU6aQoAaTYU90TIcrFwBCCFANDWIKDVUAMZkcBUVZBQWDQGwWERcnJhcXETBbBUEyKzubsjobK4PYrEZCwsxCQqZgc4KNTVmMjQOQzIfbW5jOgOYehDspAwBt9Q/S3exo3wAAAABJRU5ErkJggg==" />
+          <img class="intLink" title="Remove formatting"
+            src="data:image/gif;base64,R0lGODlhFgAWAIQbAD04KTRLYzFRjlldZl9vj1dusY14WYODhpWIbbSVFY6O7IOXw5qbms+wUbCztca0ccS4kdDQjdTLtMrL1O3YitHa7OPcsd/f4PfvrvDv8Pv5xv///////////////////yH5BAEKAB8ALAAAAAAWABYAAAV84CeOZGmeaKqubMteyzK547QoBcFWTm/jgsHq4rhMLoxFIehQQSAWR+Z4IAyaJ0kEgtFoLIzLwRE4oCQWrxoTOTAIhMCZ0tVgMBQKZHAYyFEWEV14eQ8IflhnEHmFDQkAiSkQCI2PDC4QBg+OAJc0ewadNCOgo6anqKkoIQA7" />
+          <img class="intLink" title="Undo"
+            src="data:image/gif;base64,R0lGODlhFgAWAOMKADljwliE33mOrpGjuYKl8aezxqPD+7/I19DV3NHa7P///////////////////////yH5BAEKAA8ALAAAAAAWABYAAARR8MlJq7046807TkaYeJJBnES4EeUJvIGapWYAC0CsocQ7SDlWJkAkCA6ToMYWIARGQF3mRQVIEjkkSVLIbSfEwhdRIH4fh/DZMICe3/C4nBQBADs=" />
+          <img class="intLink" title="Redo"
+            src="data:image/gif;base64,R0lGODlhFgAWAMIHAB1ChDljwl9vj1iE34Kl8aPD+7/I1////yH5BAEKAAcALAAAAAAWABYAAANKeLrc/jDKSesyphi7SiEgsVXZEATDICqBVJjpqWZt9NaEDNbQK1wCQsxlYnxMAImhyDoFAElJasRRvAZVRqqQXUy7Cgx4TC6bswkAOw==" />
+          <label for="imgFile">
+            <img class="intLink" title="Insert image"
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAAbFBMVEUAAAAAAAAmJibm5uaJiYnZ2dnn5+e5ubmBgYHNzc3z8/Pr6+vW1ta2trZ/f3/y8vLQ0NDPz8/Dw8OgoKCOjo54eHgcHBwGBgb+/v7T09PIyMi+vr6srKyEhIRqampiYmJbW1tPT08qKioRERGLOctyAAAAAXRSTlMAQObYZgAAAHJJREFUGNOtzkkShCAQRNFKbLsVsZ3nWe9/R8EAYeHSv6u3qEh6qo0/TkUiKULNbCglfZGSjf0vCvWZLTmxwBBXVGG1NO2D+hoIQ6IHmrKrciJDfgxIBGbPId12E//pUjOiyHydCGtFyQG3kWTcc4ro1U7vPAUU4TAxJQAAAABJRU5ErkJggg==" />
+          </label>
+          <input type="file" id="imgFile" />
+          <label for="mainFile">
+            <img class="intLink" title="Load a file"
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAMAAABhEH5lAAAATlBMVEUAAAAAAAD19fVcXFwbGxsTExP8/PzT09NxcXFaWlo4ODg1NTUEBAT5+fnw8PDr6+vU1NTIyMi+vr6Xl5dsbGxnZ2dXV1dISEghISEMDAw0f0rSAAAAAXRSTlMAQObYZgAAAFBJREFUGNO9yEkOgCAQBMBmUxDc9/9/VJ2EjgkHb9axcJuceqQRtMq4aAdWkDr6xtW5jJRFx2MBu23fdS7eG6Vz0U8VytrKmhMnVoDQlOfbBQLIAl4FF2fyAAAAAElFTkSuQmCC" />
+          </label>
+          <input type="file" id="mainFile" />
+          <span id='clearBtnSmall' class="cssbutton"
+            style="float: right; padding: 3px 10px; font-size: 13px; margin-right: 10px; background-color: #f9f9f9; border: 1px solid #ccc; color: #555; margin-top: 1px; display: inline-block;"
+            title="clear the box">Clear</span>
+          <span id='copyBtnSmall' class="cssbutton"
+            style="float: right; padding: 3px 10px; font-size: 13px; margin-right: 6px; background-color: #f9f9f9; border: 1px solid #ccc; color: #555; margin-top: 1px; display: inline-block;"
+            title="copy box contents to clipboard">Copy</span>
+        </div>
+      </div>
+      <div id="mainBox" contenteditable="true" class="cssbox"
+        placeholder="1 Type what you want to hide here; you can also insert images and files. 2 Load a cover image with the button. 3 Click either Hide into PNG or Hide into JPG. For best results, use a Password and keep Compressed and Smart Pwd. checked. To reveal the hidden content, load the image, type the Password, set the options, and click Reveal.">
+      </div>
+    </div>
+    <div id="rightPanel">
+      <br>
+      <br>
+      <div id="imageMsg"></div>
+      <br>
+      <br>
+      <img id="preview" src="" width="100%" />
     </div>
   </div>
-  <hr>
-  <address>
-  PassLok Image Steganography 1.1 &#169; F. Ruiz 2025
-  </address>
-  <ul><li>stego engine based on F5, by A. Westfeld 2001</li>
-    <li> jpeg image hiding libraries js-steg by Owen Campbell-Moore et al. 2014</li>
-    <li> seedable PRNG from Claude AI, retrieved 2025</li>
-    <li> lz-string compression by pieroxy 2014</li>
-    <li> DOMPurify XSS sanitizer by cure53 2022</li>
-    <li> smart Password engine based on WiseHash by F. Ruiz 2014</li>
-  </ul>
-  <address>
-  This document may be used, modified or redistributed under GNU GPL license, version 3.0 or higher.
-  </address>
-  <br>
-  <button class="cssbutton" id="help2mainBtnBottom" value="&lt; Back" title="return to main screen (alt-M)">&#9668; Back</button>
-</div>
 
-<!--Body script: window reformatting, button event listeners-->
-<script src="lib/bodyscript.js"></script>
+  <!--Help screen-->
+  <div id="helpScr">
+    <h2 id="helpHeading">Welcome to PassLok Image Steganography</h2>
+    <button class="cssbutton" id="help2mainBtnTop" value="&lt; Back" title="return to main screen (alt-M)"
+      accesskey='m'>&#9668; Back</button>
+    <br />
+    &nbsp;&nbsp;&nbsp;<span id='helpmsg'>For help on how to do things, click on each title.</span><br>
+    <br>
+    <hr>
+    <div id="aa1" class="helpitem">
+      <h3>What is PassLok Image Steganography?</h3>
+    </div>
+    <div id="a1" class="helptext">
+      <p>PassLok Image Steganography encrypts text, images, and files, and hides them inside the data of jpeg or png
+        images. If you supply a Password, it becomes extremely difficult even to detect that there is anything contained
+        in that image. Only those possessing the same Password can retrieve the contents.</p>
+      <p>This program uses the image hiding functions of PassLok Privacy and PassLok for Email (both available from <a
+          href="https://passlok.com" target="_blank">https://passlok.com</a>), further refined for v2.0 in Privacy Bar
+        (<a href="https://privacybar.net" target="_blank">https://privacybar.net</a>) but is a standalone encryption
+        program on
+        its own right. Its output is compatible with those programs when checking <strong>PB Compatible</strong>.</p>
+      <p>PassLok Image Steganography runs on a browser and is platform-independent. It has difficulty running on iOS,
+        however, because of bugs in the jpeg-encoding libraries.</p>
+      <p>If you want more capability, you may want to try the full Privacy Bar extension for Chromium browsers, from <a
+          href="https://chromewebstore.google.com/detail/privacy-bar/objpfdibjogbdpjjpomnoaflkgdeaanb"
+          target="_blank">this link</a>, or PassLok Privacy, from <a href="https://passlok.com/app"
+          target="_blank">https://passlok.com/app</a>, or even the PQ-capable KyberLock <a
+          href="https://kyberlock.com/app" target="_blank">https://kyberlock.com/app</a>, which are capable of
+        asymmetric
+        encryption (you don't give your Password to anyone) plus signatures and secret splitting. There is also PassLok
+        for Email, available for <a
+          href="https://chrome.google.com/webstore/detail/passlok-for-email/ehakihemolfjgbbfhkbjgahppbhecclh"
+          target="_blank">Chrome</a> and <a href="https://addons.mozilla.org/en-US/firefox/addon/passlok-for-email/"
+          target="_blank">Firefox</a>, which integrates with popular webmail services.</p>
+    </div>
+    <hr>
+    <div id="aa2" class="helpitem">
+      <h3>How do I use the program?</h3>
+    </div>
+    <div id="a2" class="helptext">
+      <p>To hide text or data, just type what you want to hide in the big box (you can also load images and files with
+        the buttons on the right side of the toolbar), and the Password in the top box (optional but highly
+        recommended), load a cover image with the big button, and click either <strong>Hide into PNG</strong> or
+        <strong>Hide into JPG</strong>. The original format of the image does not matter. Save the resulting
+        message-containing image, which will still look very much like the original, by right-clicking on it and
+        choosing <strong>Save Image As...</strong>
+      </p>
+      <p>To reveal the hidden contents, load the image with the big button and type in the optional Password, then click
+        <strong>Reveal</strong>. If successful, the hidden message or data will appear in the big box.
+      </p>
+      <p>You'll be able to store more text if you leave the <strong>Compressed</strong> check on. If you check
+        <strong>Smart Pwd.</strong>, computations will be added for weak passwords, thus increasing overall security.
+        The state of these checkboxes must be the same for encryption and decryption. If you check instead <strong>PB
+          Compatible</strong>, an even stronger key-derivation algorithm is used, to make the app compatible with
+        Privacy Bar.
+      </p>
+      <p>The program will run from a saved file, so you don't have to be online in order to use it.</p>
+    </div>
+    <hr>
+    <div id="aa3" class="helpitem">
+      <h3>Can I encrypt files and images?</h3>
+    </div>
+    <div id="a3" class="helptext">
+      <p>You have two choices:</p>
+      <p>1. Encrypt the files using AES with a utility such as <a href="http://www.7-zip.org/" target="_blank">7-zip</a>
+        (Windows), <a href="http://www.kekaosx.com/" target="_blank">Keka</a> (OSX), or p7zip (Linux), then encrypt the
+        encryption password into an image, and attach both image and encrypted archive to your email.</p>
+      <p>2. You can also load files using the button at the right end of the formatting toolbar, which will load each
+        file as a link, and then encrypt them as a regular message. If the file loaded is text, it will load as text
+        rather than as a link. Decrypted files will be sent to the Downloads folder.</p>
+      <p>Images can be loaded as described above or directly as image, by clicking the image icon on the rich text
+        toolbar, and are hidden like text. </p>
+    </div>
+    <hr>
+    <div id="aa4" class="helpitem">
+      <h3>Keyboard shortcuts</h3>
+    </div>
+    <div id="a4" class="helptext">
+      <p>The main functions can be accessed directly from the keyboard. The button tooltips tell you what the shortcut
+        is for each button that has a shortcut, but below is a list just in case:</p>
+      <ul>
+        <p>Alt-P: Hide into <strong>P</strong>NG</p>
+        <p>Alt-J: Hide into <strong>J</strong>PG</p>
+        <p>Alt-R: <strong>R</strong>eveal</p>
+        <p>Alt-C: <strong>C</strong>lear</p>
+        <p>Alt-H: <strong>H</strong>elp and back </p>
+      </ul>
+    </div>
+    <hr>
+    <div id="aa5" class="helpitem">
+      <h3>Privacy Statement and Warrant Canary</h3>
+    </div>
+    <div id="a5" class="helptext">
+      <p>PassLok Image Steganography is a self-contained piece of code that does not rely on servers to do its job.
+        Therefore:</p>
+      <p><strong>1. We cannot give your Password to anyone</strong> (not even yourself) because we don't have it.</p>
+      <p><strong>2. We cannot give your private data to anyone</strong> because the app does not send anything out of
+        your device, either. When you download the app from the web server, you get only the code, without any cookies,
+        plugins, or anything of that sort.</p>
+      <p><strong>4. We will never weaken the cryptography methods contained within the program at the request of a third
+          party, private or public.</strong> This also means no backdoors will ever be added. We would rather shut down
+        the project than be forced to do this, which would betray the very essence of our efforts. If we learn that a
+        counterfeit version of the program is circulating, whether placed by hackers or government agencies, we will
+        make the fact known to users.</p>
+      <p><strong>Notice:</strong> Since this program is distributed as a piece of human-readable code, we consider it an
+        expression of free speech protected by the laws of many countries. Putting into circulation tampered versions of
+        the program, whether by individuals or public entities, violates free speech and copyright protection laws.</p>
+      <p>PassLok Image Steganography contains strong cryptographic methods, which may be illegal to use in some
+        countries. Please check the local laws before using it.</p>
+      <div id="canary"><img
+          src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8BAMAAADI0sRBAAAAGFBMVEUAAAAAAAD///91XhdgYGCcnJzMzMzUqipkv+fEAAAAAXRSTlMAQObYZgAAAYFJREFUOMt1lLGOgzAQREEUaVkHkhpEUkOVmvsDIt31IF1PdP8vnWwzHtaGKRDmsbO7eHGm9Cfyys4km/ojmEvQ/ZBS10N6Gl+I18/v6G/KtCrTOnVuscbWSwsxPYPBwEsGw1nxgEGpxoUzuI00MjuDqWdwvyD4e88nuOdbMFOge3j79V3liHAjL7np4kt4u5V2fwS8bGbbHd3hjZ0wyt1hZAzuxL3FZoffqrUSlaG4qqU2HFbMfoplj68pNqr0T4xF4SFUMyJcY+EqxVgTS4QlwkZjrAXSubFRsw4H5p5BxLlIgwfTIW6DoXafPcYkqN74zRf3uN7bf2HHChvnuMGX7WoRYD8tTN/4q2CS/YQ8tvY79GwsXjO3J6jq/Qz7Mds8ds5RSDypAmz4zSr1E/EfQ9MJHjDd5PSGu1Vt8Q3BOBrVDuNdnj0DB2RCvH0xPpnYHoLhXmluXdajU7E7ONOj+YyP5Fzx9MDHQHIkQGCv1WtcaFqSkKeUumjnVB80TP0D1fGXaRHBg/YAAAAASUVORK5CYII=">
+        <p>This paragraph and the canary logo above attest to the fact that, up until the release of version 2.0.0
+          (May 2026) we have not received any requests under gag order for user data or modifications of the code.
+          This paragraph will be periodically updated as this situation continues.</p>
+      </div>
+    </div>
+    <hr>
+    <address>
+      PassLok Image Steganography 2.0.0 &#169; F. Ruiz 2026
+    </address>
+    <ul>
+      <li>stego engine based on F5, by A. Westfeld 2001</li>
+      <li> jpeg image hiding libraries js-steg by Owen Campbell-Moore et al. 2014</li>
+      <li> scrypt-async by Dmitri Chestnykh 2016</li>
+      <li> lz-string compression by pieroxy 2014</li>
+      <li> DOMPurify XSS sanitizer by cure53 2026</li>
+      <li> smart Password engine based on WiseHash by F. Ruiz 2014</li>
+    </ul>
+    <address>
+      This document may be used, modified or redistributed under GNU GPL license, version 3.0 or higher.
+    </address>
+    <br>
+    <button class="cssbutton" id="help2mainBtnBottom" value="&lt; Back" title="return to main screen (alt-M)">&#9668;
+      Back</button>
+  </div>
 
-<script>
-// Register service worker for offline support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js')
-      .then(function(registration) {
-        console.log('ServiceWorker registered:', registration.scope);
-      })
-      .catch(function(error) {
-        console.log('ServiceWorker registration failed:', error);
-      });
-  });
-} else {
-  console.log('ServiceWorker not supported');
-}
-</script>
+  <!--Body script: window reformatting, button event listeners-->
+  <script src="lib/bodyscript.js"></script>
 
 </body>
+
 </html>
