@@ -8,7 +8,7 @@ PassLok stego is based on the F5 algorithm by Andreas Westfeld (2001), which is 
 
 A Password is optional, but if you don't enter one anybody who has the program will be able to detect and extract the data. If you do use a Password, on the othe hand, you have the power of the RC4 symmetric cipher, on which the optional encryption is ultimately based, protecting your data.
 
-The algorithm presented here is slightly different from that used in PassLok Privacy and PassLok for Email, in that those take only a base64 input which, presumably, is the result of encryption and therefore has good statistical randomness, whereas the algorithm here adds some extra randomness and accepts generic binary input. Consequently, images containing a payload encoded in PassLok Privacy or PassLok for Email _won't be successfully decoded_ by this program, nor vice-versa.
+The algorithm presented here is different from that used in PassLok Privacy and PassLok for Email, in that those take only a base64 input which, presumably, is the result of encryption and therefore has good statistical randomness, whereas the algorithm here adds some extra randomness and accepts generic binary input. Consequently, images containing a payload encoded in PassLok Privacy or PassLok for Email _won't be successfully decoded_ by this program, nor vice-versa. It is, however, compatible with the image encoder in Privacy Bar, source available on GitHub.
 
 ### Usage
 The necessary functions are loaded when all the libraries in the /lib folder are loaded (only plstego.js, if you are going to encode and decode only in PNG format). No initialization is necessary, but an element containing an image (it does not matter what type, so long as the browser can display it) must be already loaded on the DOM before the functions below are called.
@@ -18,7 +18,7 @@ To encode a binary item into an image loaded in the DOM, use either of the follo
 	encodePNG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), [encryptToggle (Boolean), iter (number)],[item2 (binary array), password2 (string), iter2 (number)])
 	encodeJPG(image element (object), item to be encoded (binary array), password (string), callback function(error message to be displayed (string)), [encryptToggle (Boolean), iter (number)],[item2 (binary array), password2 (string), iter2 (number)])
 	
-	The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is 		the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}. The optional variable encryptToggle is a Boolean (default: false) that instructs the program to skip the step where noise is added or subtracted, in case the embedded data already has sufficient randomness. Optional variable iter is a number that, if larger than 0, will consume an extra amount of time proportional to 2^iter, useful as a sort of key-derivation function.
+	The first function converts the image into a PNG image, the second into a JPG image. The original image can be any type recognized by the browser. The first argument is the image element present in the DOM, which will contain the image data encoded as base64. The item to be encoded is an array containing only 1's and 0's. The callback function is used to display a string error message elsewhere in the DOM. For instance: function(msg){imageMsg.textContent = msg}. The optional variable encryptToggle is a Boolean (default: false) that instructs the program to skip the step where noise is added or subtracted, in case the embedded data already has sufficient randomness. Optional variable iter is a number that, if larger than 0, will consume an extra amount of time proportional to 2^iter, useful as a sort of key-derivation function.
 	
 	The rest of the parameters are to embed a second message: item2 as binary array, password2 as string, iter2 as number. This message is encoded after the first one, taking advantage of whatever space is left. As a minimum there should be space for 144 bits, or 18 uncompressed characters, but typically there is substantially more.
 	
@@ -37,7 +37,7 @@ The sample program index.html, which hides UTF8 text placed in a textarea elemen
 
 To encode a hidden message into an image:
 
-1. Write the text in the big box (you can also insert images and files) and, optionaly, a Password in the little box (can be more than one word). If you want to compress the text before encoding, keep the Compr. box checked.
+1. Write the text in the big box (you can also insert images and files) and, optionaly, a Password in the little box (can be more than one word). If you want to compress the text before encoding, keep the Compressed box checked.
 2. Load a cover image by clicking the "Load image" button. It can be any type of image recognized by browsers.
 3. Click either "PNG hide" to make a PNG image containing the text, or "JPG hide" to obtain a JPG image.
 4. If the encoding is successful, save the image locally by right-clicking on it.
@@ -53,6 +53,6 @@ The process may sometimes fail due to image corruption or a bug in the js-steg l
 
 ### Credits
 * Jpeg encoding and decoding are done thanks to the js-steg JavaScript libraries by Owen Campbell-Moore and others, with some little edits mostly for error handling. Source: https://github.com/owencm/js-steg
-* The PRNG used here is isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js
+* The PRNG used here used to be isaac, based on RC4, in its JavaScript implementation by Yves-Marie Rinquin. Source: https://github.com/rubycon/isaac.js/blob/master/isaac.js. This has changed with v2.0, however, and now the prng is based on xoshiro128
 * Compression used in the demo program is lz-string.js by Pieroxy. Source: https://github.com/pieroxy/lz-string
 * Special thanks to Jean-Claude Rock for explaining to me how F5 works and what its flaws are
