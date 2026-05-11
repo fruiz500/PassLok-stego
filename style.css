@@ -216,3 +216,24 @@ opacity: 0;
 #help2mainBtnBottom {
 	float: left;
 }
+
+/* Base style for small toolbar buttons */
+.btn-small-alt {
+    float: right;
+    padding: 3px 10px;
+    font-size: 13px;
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    color: #555;
+    margin-top: 1px;
+    display: inline-block;
+}
+
+/* Margin variations */
+.margin-right-10 {
+    margin-right: 10px;
+}
+
+.margin-right-6 {
+    margin-right: 6px;
+}
